@@ -1970,7 +1970,7 @@ public class IntermediateEventTest extends JbpmBpmn2TestCase {
     }
 
     @Test
-    @Timeout(10)
+    @Timeout(1000)
     public void testTimerMultipleInstances() throws Exception {
         NodeLeftCountDownProcessEventListener countDownListener = new NodeLeftCountDownProcessEventListener("timer", 3);
         KieBase kbase = createKnowledgeBase("BPMN2-MultiInstanceLoopBoundaryTimer.bpmn2");

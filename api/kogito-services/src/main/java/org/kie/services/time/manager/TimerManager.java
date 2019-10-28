@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.kie.api.runtime.process.ProcessInstance;
@@ -46,7 +47,7 @@ public class TimerManager {
 
     private TimerManagerRuntime runtime;
     private TimerService timerService;
-    private Map<Long, TimerInstance> timers = new ConcurrentHashMap<Long, TimerInstance>();
+    private Map<String, TimerInstance> timers = new ConcurrentHashMap<>();
     public static final Job processJob = new ProcessJob();
     public static final Job startProcessJob = new StartProcessJob();
 
@@ -60,6 +61,7 @@ public class TimerManager {
             runtime.startOperation();
 
             timer.setId(++timerId);
+            timer.setTimerId(UUID.randomUUID().toString());
             timer.setProcessInstanceId(processInstance.getId());
             timer.setSessionId(runtime.getIdentifier());
             timer.setActivated(new Date());
@@ -80,7 +82,7 @@ public class TimerManager {
             JobHandle jobHandle = this.timerService.scheduleJob(processJob, ctx, trigger);
 
             timer.setJobHandle(jobHandle);
-            timers.put(timer.getId(), timer);
+            timers.put(timer.getTimerId(), timer);
         } finally {
             runtime.endOperation();
         }
@@ -91,6 +93,7 @@ public class TimerManager {
             runtime.startOperation();
 
             timer.setId(++timerId);
+            timer.setTimerId(UUID.randomUUID().toString());
             timer.setProcessInstanceId(null);
             timer.setSessionId(runtime.getIdentifier());
             timer.setActivated(new Date());
@@ -111,7 +114,7 @@ public class TimerManager {
             JobHandle jobHandle = this.timerService.scheduleJob(startProcessJob, ctx, trigger);
 
             timer.setJobHandle(jobHandle);
-            timers.put(timer.getId(), timer);
+            timers.put(timer.getTimerId(), timer);
         } finally {
             runtime.endOperation();
         }
@@ -141,10 +144,10 @@ public class TimerManager {
 
         JobHandle jobHandle = this.timerService.scheduleJob(processJob, ctx, trigger);
         timer.setJobHandle(jobHandle);
-        timers.put(timer.getId(), timer);
+        timers.put(timer.getTimerId(), timer);
     }
 
-    public void cancelTimer(long timerId) {
+    public void cancelTimer(String timerId) {
 		try {
 			runtime.startOperation();
 
@@ -177,7 +180,7 @@ public class TimerManager {
         return timers.values();
     }
 
-    public Map<Long, TimerInstance> getTimerMap() {
+    public Map<String, TimerInstance> getTimerMap() {
         return this.timers;
     }
 

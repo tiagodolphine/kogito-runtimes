@@ -36,18 +36,19 @@ public class TimerNodeInstance extends StateBasedNodeInstance implements EventLi
     private static final long serialVersionUID = 510l;
     private static final Logger logger = LoggerFactory.getLogger(TimerNodeInstance.class);
     
-    private long timerId;
+    private String timerId;
+    private boolean oneTimeTimer;
     private TimerInstance timerInstance;
     
     public TimerNode getTimerNode() {
         return (TimerNode) getNode();
     }
     
-    public long getTimerId() {
+    public String getTimerId() {
     	return timerId;
     }
     
-    public void internalSetTimerId(long timerId) {
+    public void internalSetTimerId(String timerId) {
     	this.timerId = timerId;
     }
 
@@ -65,7 +66,8 @@ public class TimerNodeInstance extends StateBasedNodeInstance implements EventLi
         }
         ((InternalProcessRuntime)kruntime.getProcessRuntime())
         	.getTimerManager().registerTimer(timerInstance, (ProcessInstance) getProcessInstance());
-        timerId = timerInstance.getId();
+        timerId = timerInstance.getTimerId();
+        oneTimeTimer = timerInstance.getPeriod() == 0;
     }
     
     protected TimerInstance createTimerInstance(InternalKnowledgeRuntime kruntime) {
@@ -88,15 +90,15 @@ public class TimerNodeInstance extends StateBasedNodeInstance implements EventLi
     	} else {
     	    configureTimerInstance(timer, timerInstance);
     	}
-    	timerInstance.setTimerId(timer.getId());
+    	
     	return timerInstance;
     }
     
     public void signalEvent(String type, Object event) {
     	if ("timerTriggered".equals(type)) {
     		TimerInstance timer = (TimerInstance) event;
-            if (timer.getId() == timerId) {
-                triggerCompleted(timer.getPeriod() == 0);
+            if (timer.getTimerId().equals(timerId)) {
+                triggerCompleted(oneTimeTimer);
             }
     	}
     }

@@ -110,7 +110,7 @@ public abstract class WorkflowProcessInstanceImpl extends ProcessInstanceImpl
 
     private int slaCompliance = SLA_NA;
     private Date slaDueDate;
-    private long slaTimerId = -1;
+    private String slaTimerId;
     
     private String referenceId;
 
@@ -395,7 +395,7 @@ public abstract class WorkflowProcessInstanceImpl extends ProcessInstanceImpl
                 nodeInstance
                         .cancel();
             }
-            if (this.slaTimerId > -1) {
+            if (this.slaTimerId != null && !slaTimerId.trim().isEmpty()) {
                 processRuntime.getTimerManager().cancelTimer(this.slaTimerId);
                 logger.debug("SLA Timer {} has been canceled", this.slaTimerId);
             }
@@ -493,7 +493,7 @@ public abstract class WorkflowProcessInstanceImpl extends ProcessInstanceImpl
         if (slaDueDateExpression != null) {
             TimerInstance timer = configureSLATimer(slaDueDateExpression);
             if (timer != null) {
-                this.slaTimerId = timer.getId();
+                this.slaTimerId = timer.getTimerId();
                 this.slaDueDate = new Date(System.currentTimeMillis() + timer.getDelay());
                 this.slaCompliance = SLA_PENDING;
                 logger.debug("SLA for process instance {} is PENDING with due date {}", this.getId(), this.slaDueDate);
@@ -566,7 +566,7 @@ public abstract class WorkflowProcessInstanceImpl extends ProcessInstanceImpl
             processRuntime.getProcessEventSupport().fireBeforeSLAViolated(this, kruntime);
             logger.debug("SLA violated on process instance {}", getId());
             this.slaCompliance = SLA_VIOLATED;
-            this.slaTimerId = -1;
+            this.slaTimerId = null;
             processRuntime.getProcessEventSupport().fireAfterSLAViolated(this, kruntime);
         }
     }
@@ -582,7 +582,7 @@ public abstract class WorkflowProcessInstanceImpl extends ProcessInstanceImpl
 
             if ("timerTriggered".equals(type)) {
                 TimerInstance timer = (TimerInstance) event;
-                if (timer.getId() == slaTimerId) {
+                if (timer.getTimerId().equals(slaTimerId)) {
                     handleSLAViolation();
                     // no need to pass the event along as it was purely for SLA tracking
                     return;
@@ -937,11 +937,11 @@ public abstract class WorkflowProcessInstanceImpl extends ProcessInstanceImpl
         this.slaDueDate = slaDueDate;
     }
 
-    public Long getSlaTimerId() {
+    public String getSlaTimerId() {
         return slaTimerId;
     }
 
-    public void internalSetSlaTimerId(Long slaTimerId) {
+    public void internalSetSlaTimerId(String slaTimerId) {
         this.slaTimerId = slaTimerId;
     }
 

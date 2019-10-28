@@ -66,7 +66,7 @@ public abstract class StateBasedNodeInstance extends ExtendedNodeInstanceImpl im
 
     private static final Logger logger = LoggerFactory.getLogger(StateBasedNodeInstance.class);
 
-    private List<Long> timerInstances;
+    private List<String> timerInstances;
 
     public StateBasedNode getEventBasedNode() {
         return (StateBasedNode) getNode();
@@ -89,7 +89,7 @@ public abstract class StateBasedNodeInstance extends ExtendedNodeInstanceImpl im
             for (Timer timer : timers.keySet()) {
                 TimerInstance timerInstance = createTimerInstance(timer);
                 timerManager.registerTimer(timerInstance, getProcessInstance());
-                timerInstances.add(timerInstance.getId());
+                timerInstances.add(timerInstance.getTimerId());
             }
         }
 
@@ -116,7 +116,7 @@ public abstract class StateBasedNodeInstance extends ExtendedNodeInstanceImpl im
         if (slaDueDateExpression != null) {
             TimerInstance timer = ((WorkflowProcessInstanceImpl) getProcessInstance()).configureSLATimer(slaDueDateExpression);
             if (timer != null) {
-                this.slaTimerId = timer.getId();
+                this.slaTimerId = timer.getTimerId();
                 this.slaDueDate = new Date(System.currentTimeMillis() + timer.getDelay());
                 this.slaCompliance = org.kie.api.runtime.process.ProcessInstance.SLA_PENDING;
                 logger.debug("SLA for node instance {} is PENDING with due date {}", this.getId(), this.slaDueDate);
@@ -182,8 +182,7 @@ public abstract class StateBasedNodeInstance extends ExtendedNodeInstanceImpl im
             }
         } else {
             configureTimerInstance(timer, timerInstance);
-        }
-        timerInstance.setTimerId(timer.getId());
+        }        
         return timerInstance;
     }
 
@@ -310,7 +309,7 @@ public abstract class StateBasedNodeInstance extends ExtendedNodeInstanceImpl im
             processRuntime.getProcessEventSupport().fireBeforeSLAViolated(getProcessInstance(), this, getProcessInstance().getKnowledgeRuntime());
             logger.debug("SLA violated on node instance {}", getId());
             this.slaCompliance = org.kie.api.runtime.process.ProcessInstance.SLA_VIOLATED;
-            this.slaTimerId = -1;
+            this.slaTimerId = null;
             processRuntime.getProcessEventSupport().fireAfterSLAViolated(getProcessInstance(), this, getProcessInstance().getKnowledgeRuntime());
         }
     }
@@ -319,9 +318,9 @@ public abstract class StateBasedNodeInstance extends ExtendedNodeInstanceImpl im
     public void signalEvent(String type, Object event) {
         if ("timerTriggered".equals(type)) {
             TimerInstance timerInstance = (TimerInstance) event;
-            if (timerInstances != null && timerInstances.contains(timerInstance.getId())) {
+            if (timerInstances != null && timerInstances.contains(timerInstance.getTimerId())) {
                 triggerTimer(timerInstance);
-            } else if (timerInstance.getId() == slaTimerId) {
+            } else if (timerInstance.getTimerId().equals(slaTimerId)) {
                 handleSLAViolation();
             }
         } else if (("slaViolation:" + getId()).equals(type)) {
@@ -337,7 +336,7 @@ public abstract class StateBasedNodeInstance extends ExtendedNodeInstanceImpl im
 
     private void triggerTimer(TimerInstance timerInstance) {
         for (Map.Entry<Timer, DroolsAction> entry : getEventBasedNode().getTimers().entrySet()) {
-            if (entry.getKey().getId() == timerInstance.getTimerId()) {
+            if (entry.getKey().getId() == timerInstance.getId()) {
                 executeAction((Action) entry.getValue().getMetaData("Action"));
                 return;
             }
@@ -355,7 +354,7 @@ public abstract class StateBasedNodeInstance extends ExtendedNodeInstanceImpl im
 
     @Override
     public void addEventListeners() {
-        if (timerInstances != null && (!timerInstances.isEmpty()) || slaTimerId > -1) {
+        if (timerInstances != null && (!timerInstances.isEmpty()) || (this.slaTimerId != null && !this.slaTimerId.trim().isEmpty())) {
             addTimerListener();
         }
         if (slaCompliance == org.kie.api.runtime.process.ProcessInstance.SLA_PENDING) {
@@ -393,11 +392,11 @@ public abstract class StateBasedNodeInstance extends ExtendedNodeInstanceImpl im
         super.triggerCompleted(type, remove);
     }
 
-    public List<Long> getTimerInstances() {
+    public List<String> getTimerInstances() {
         return timerInstances;
     }
 
-    public void internalSetTimerInstances(List<Long> timerInstances) {
+    public void internalSetTimerInstances(List<String> timerInstances) {
         this.timerInstances = timerInstances;
     }
 
@@ -423,14 +422,14 @@ public abstract class StateBasedNodeInstance extends ExtendedNodeInstanceImpl im
         if (timerInstances != null) {
             TimerManager timerManager = ((InternalProcessRuntime)
                     getProcessInstance().getKnowledgeRuntime().getProcessRuntime()).getTimerManager();
-            for (Long id : timerInstances) {
+            for (String id : timerInstances) {
                 timerManager.cancelTimer(id);
             }
         }
     }
 
     private void cancelSlaTimer() {
-        if (this.slaTimerId > -1) {
+        if (this.slaTimerId != null && !this.slaTimerId.trim().isEmpty()) {
             TimerManager timerManager = ((InternalProcessRuntime)
                     getProcessInstance().getKnowledgeRuntime().getProcessRuntime()).getTimerManager();
             timerManager.cancelTimer(this.slaTimerId);

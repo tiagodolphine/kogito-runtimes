@@ -50,7 +50,7 @@ public class EventNodeInstance extends ExtendedNodeInstanceImpl implements Event
     public void signalEvent(String type, Object event) {
         if ("timerTriggered".equals(type)) {
             TimerInstance timerInstance = (TimerInstance) event;
-            if (timerInstance.getId() == slaTimerId) {                
+            if (timerInstance.getTimerId().equals(slaTimerId)) {                
                 handleSLAViolation();        
             }
         } else if (("slaViolation:" + getId()).equals(type)) {
@@ -91,7 +91,7 @@ public class EventNodeInstance extends ExtendedNodeInstanceImpl implements Event
         if (slaDueDateExpression != null) {
             TimerInstance timer = ((WorkflowProcessInstanceImpl)getProcessInstance()).configureSLATimer(slaDueDateExpression);
             if (timer != null) {
-                this.slaTimerId = timer.getId();
+                this.slaTimerId = timer.getTimerId();
                 this.slaDueDate = new Date(System.currentTimeMillis() + timer.getDelay());
                 this.slaCompliance = ProcessInstance.SLA_PENDING;
                 logger.debug("SLA for node instance {} is PENDING with due date {}", this.getId(), this.slaDueDate);
@@ -105,13 +105,13 @@ public class EventNodeInstance extends ExtendedNodeInstanceImpl implements Event
             processRuntime.getProcessEventSupport().fireBeforeSLAViolated(getProcessInstance(), this, getProcessInstance().getKnowledgeRuntime());
             logger.debug("SLA violated on node instance {}", getId());                   
             this.slaCompliance = ProcessInstance.SLA_VIOLATED;
-            this.slaTimerId = -1;
+            this.slaTimerId = null;
             processRuntime.getProcessEventSupport().fireAfterSLAViolated(getProcessInstance(), this, getProcessInstance().getKnowledgeRuntime());
         }
     }
     
     private void cancelSlaTimer() {
-        if (this.slaTimerId > -1) {
+        if (this.slaTimerId != null && !this.slaTimerId.trim().isEmpty()) {
             TimerManager timerManager = ((InternalProcessRuntime)
                     getProcessInstance().getKnowledgeRuntime().getProcessRuntime()).getTimerManager();
             timerManager.cancelTimer(this.slaTimerId);
@@ -225,7 +225,7 @@ public class EventNodeInstance extends ExtendedNodeInstanceImpl implements Event
 	    } else {
 	        getProcessInstance().addEventListener(eventType, getEventListener(), true);
 	    }
-	    if (slaTimerId > -1) {
+	    if (this.slaTimerId != null && !this.slaTimerId.trim().isEmpty()) {
 	        addTimerListener();
 	    }
 	}

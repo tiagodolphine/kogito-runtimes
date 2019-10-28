@@ -601,7 +601,6 @@ public class ProcessRuntimeImpl implements InternalProcessRuntime {
             } else {
                 configureTimerInstance(timer, timerInstance);
             }
-            timerInstance.setTimerId(timer.getId());
             return timerInstance;
         }
         

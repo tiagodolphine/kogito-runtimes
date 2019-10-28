@@ -54,8 +54,8 @@ public class UpdateTimerCommand implements ExecutableCommand<Void>, ProcessInsta
     protected String processInstanceId;
     
     @XmlElement
-    @XmlSchemaType(name = "long")
-    protected long timerId;
+    @XmlSchemaType(name = "string")
+    protected String timerId;
 
     @XmlElement
     @XmlSchemaType(name = "string")
@@ -73,32 +73,32 @@ public class UpdateTimerCommand implements ExecutableCommand<Void>, ProcessInsta
     @XmlSchemaType(name = "int")
     protected int repeatLimit;
 
-    public UpdateTimerCommand(String processInstanceId, String timerName, long delay) {
+    public UpdateTimerCommand(String processInstanceId, long delay, String timerName) {
         this(processInstanceId, timerName, delay, 0, 0);
     }
 
-    public UpdateTimerCommand(String processInstanceId, String timerName, long period, int repeatLimit) {
+    public UpdateTimerCommand(String processInstanceId, long period, int repeatLimit, String timerName) {
         this(processInstanceId, timerName, 0, period, repeatLimit);
     }
 
-    public UpdateTimerCommand(String processInstanceId, String timerName, long delay, long period, int repeatLimit) {
+    public UpdateTimerCommand(String processInstanceId, long delay, long period, int repeatLimit, String timerName) {
         this.processInstanceId = processInstanceId;
         this.timerName = timerName;
-        this.timerId = -1;
+        this.timerId = null;
         this.delay = delay;
         this.period = period;
         this.repeatLimit = repeatLimit;
     }
     
-    public UpdateTimerCommand(String processInstanceId, long timerId, long delay) {
+    public UpdateTimerCommand(String processInstanceId, String timerId, long delay) {
         this(processInstanceId, timerId, delay, 0, 0);
     }
 
-    public UpdateTimerCommand(String processInstanceId, long timerId, long period, int repeatLimit) {
+    public UpdateTimerCommand(String processInstanceId, String timerId, long period, int repeatLimit) {
         this(processInstanceId, timerId, 0, period, repeatLimit);
     }
 
-    public UpdateTimerCommand(String processInstanceId, long timerId, long delay, long period, int repeatLimit) {
+    public UpdateTimerCommand(String processInstanceId, String timerId, long delay, long period, int repeatLimit) {
         this.processInstanceId = processInstanceId;
         this.timerId = timerId;
         this.delay = delay;
@@ -119,20 +119,20 @@ public class UpdateTimerCommand implements ExecutableCommand<Void>, ProcessInsta
         for (NodeInstance nodeInstance : wfp.getNodeInstances(true)) {
             if (nodeInstance instanceof TimerNodeInstance) {
                 TimerNodeInstance tni = (TimerNodeInstance) nodeInstance;
-                if (tni.getTimerId() == timerId || (tni.getNodeName() != null && tni.getNodeName().equals(timerName))) {
+                if (tni.getTimerId().equals(timerId)|| (tni.getNodeName() != null && tni.getNodeName().equals(timerName))) {
                     TimerInstance timer = tm.getTimerMap().get(tni.getTimerId());
                     
                     TimerInstance newTimer = rescheduleTimer(timer, tm);
                     logger.debug("New timer {} about to be registered", newTimer);
                     tm.registerTimer(newTimer, wfp);                    
-                    tni.internalSetTimerId(newTimer.getId());
+                    tni.internalSetTimerId(newTimer.getTimerId());
                     logger.debug("New timer {} successfully registered", newTimer);
 
                     break;
                 }
             } else if (nodeInstance instanceof StateBasedNodeInstance) {
                 StateBasedNodeInstance sbni = (StateBasedNodeInstance) nodeInstance;
-                List<Long> timerList = sbni.getTimerInstances();
+                List<String> timerList = sbni.getTimerInstances();
                 if ((timerList != null && timerList.contains(timerId)) || (sbni.getNodeName() != null && sbni.getNodeName().equals(timerName))) {
                     
                     if (timerList != null && timerList.size() == 1) {
@@ -142,7 +142,7 @@ public class UpdateTimerCommand implements ExecutableCommand<Void>, ProcessInsta
                         logger.debug("New timer {} about to be registered", newTimer);
                         tm.registerTimer(newTimer, wfp);                        
                         timerList.clear();
-                        timerList.add(newTimer.getId());
+                        timerList.add(newTimer.getTimerId());
     
                         sbni.internalSetTimerInstances(timerList);
                         logger.debug("New timer {} successfully registered", newTimer);

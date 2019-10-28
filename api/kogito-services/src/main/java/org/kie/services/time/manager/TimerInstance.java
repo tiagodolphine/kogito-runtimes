@@ -30,7 +30,7 @@ public class TimerInstance implements Serializable{
     private static final long serialVersionUID = 9161292833931227195L;
     
     private long id;
-    private long timerId;
+    private String timerId;
     private long delay;
     private long period;
     private JobHandle jobHandle;
@@ -49,11 +49,11 @@ public class TimerInstance implements Serializable{
         this.id = id;
     }
     
-    public long getTimerId() {
+    public String getTimerId() {
 		return timerId;
 	}
 
-	public void setTimerId(long timerId) {
+	public void setTimerId(String timerId) {
 		this.timerId = timerId;
 	}
 

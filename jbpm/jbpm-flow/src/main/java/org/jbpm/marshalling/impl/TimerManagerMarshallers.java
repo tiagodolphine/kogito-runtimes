@@ -76,7 +76,7 @@ public class TimerManagerMarshallers {
                 timerInstance.setJobHandle(jobHandle);
                 pctx.setJobHandle(jobHandle);
 
-                tm.getTimerMap().put(timerInstance.getId(), timerInstance);
+                tm.getTimerMap().put(timerInstance.getTimerId(), timerInstance);
             }
         }
     }

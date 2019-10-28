@@ -120,7 +120,7 @@ public class TimerTest extends AbstractBaseTest  {
         // we can't know exactly how many times this will fire as timers are not precise, but should be atleast 4
         assertTrue( counter >= 4 );
         
-        timerManager.cancelTimer(timer.getId());
+        timerManager.cancelTimer(timer.getTimerId());
         int lastCount = counter;
         try {            
         	Thread.sleep(1000);
