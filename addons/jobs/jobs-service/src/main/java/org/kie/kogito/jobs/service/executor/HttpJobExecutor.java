@@ -29,7 +29,6 @@ import io.vertx.axle.ext.web.client.WebClient;
 import org.kie.kogito.jobs.api.Job;
 import org.kie.kogito.jobs.service.converters.HttpConverters;
 import org.kie.kogito.jobs.service.model.HTTPRequestCallback;
-import org.kie.kogito.jobs.service.repository.ReactiveJobRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,15 +38,12 @@ public class HttpJobExecutor implements JobExecutor {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpJobExecutor.class);
 
     @Inject
-    Vertx vertx;
+    private Vertx vertx;
 
     private WebClient client;
 
     @Inject
-    HttpConverters httpConverters;
-
-    @Inject
-    ReactiveJobRepository jobRepository;
+    private HttpConverters httpConverters;
 
     @PostConstruct
     void initialize() {
@@ -80,12 +76,11 @@ public class HttpJobExecutor implements JobExecutor {
         return executeCallback(callback)
                 .thenApply(result -> {
                     LOGGER.info("Response of executed job {} {}", result, job);
-                    jobRepository.delete(job.getId());
                     return job;
                 })
                 //handle error
                 .exceptionally(ex -> {
-                    LOGGER.error("Error executing job " + job, ex);
+                    LOGGER.error("error executing job " + job, ex);
                     return job;
                 });
     }

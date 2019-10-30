@@ -19,12 +19,12 @@ package org.kie.kogito.jobs.service.scheduler;
 import java.time.Duration;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 import javax.inject.Inject;
 
+import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.kie.kogito.jobs.api.Job;
 import org.kie.kogito.jobs.service.executor.JobExecutor;
@@ -43,10 +43,10 @@ public abstract class BaseTimerJobScheduler implements ReactiveJobScheduler<Sche
     private Logger logger = LoggerFactory.getLogger(BaseTimerJobScheduler.class);
 
     @Inject
-    JobExecutor jobExecutor;
+    private JobExecutor jobExecutor;
 
     @Inject
-    ReactiveJobRepository jobRepository;
+    private ReactiveJobRepository jobRepository;
 
     @Override
     public Publisher<ScheduledJob> schedule(Job job) {
@@ -54,7 +54,7 @@ public abstract class BaseTimerJobScheduler implements ReactiveJobScheduler<Sche
                 //1- check if the job is already scheduled
                 .fromCompletionStage(jobRepository.exists(job.getId()))
                 .flatMapCompletionStage(exists -> exists
-                        ? cancel(job.getId()).thenApply(Objects::nonNull)
+                        ? cancel(job.getId())
                         : CompletableFuture.completedFuture(Boolean.TRUE))
                 .filter(Boolean.TRUE::equals)
                 //2- calculate the delay (when the job should be executed)
@@ -80,13 +80,12 @@ public abstract class BaseTimerJobScheduler implements ReactiveJobScheduler<Sche
         logger.debug("Cancel Job Scheduling {}", jobId);
         return ReactiveStreams
                 .fromCompletionStageNullable(jobRepository.get(jobId))
-                .flatMapRsPublisher(this::doCancel)
-                .filter(Boolean.TRUE::equals)
+                .map(this::doCancel)
                 .map(r -> jobRepository.delete(jobId))
                 .findFirst()
                 .run()
-                .thenCompose(job -> job.orElseThrow(()-> new RuntimeException("Failed to cancel job scheduling " + jobId)));
+                .thenCompose(job -> job.orElseThrow(()-> new RuntimeException("Failed to cancel job scheduling")));
     }
 
-    public abstract Publisher<Boolean> doCancel(ScheduledJob scheduledJob);
+    public abstract PublisherBuilder<Boolean> doCancel(ScheduledJob scheduledJob);
 }

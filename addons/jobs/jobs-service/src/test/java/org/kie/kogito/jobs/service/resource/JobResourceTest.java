@@ -16,30 +16,28 @@
 
 package org.kie.kogito.jobs.service.resource;
 
-import static io.restassured.RestAssured.given;
-import static org.hamcrest.CoreMatchers.equalTo;
-
 import java.time.ZonedDateTime;
 
 import javax.inject.Inject;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import io.quarkus.test.junit.QuarkusTest;
+import io.restassured.http.ContentType;
+import io.restassured.response.ValidatableResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.kie.kogito.jobs.api.Job;
 import org.kie.kogito.jobs.api.JobBuilder;
+import org.kie.kogito.jobs.service.json.JacksonConfiguration;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import io.quarkus.test.junit.QuarkusTest;
-import io.restassured.http.ContentType;
-import io.restassured.response.ValidatableResponse;
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.CoreMatchers.equalTo;
 
 @QuarkusTest
 class JobResourceTest {
 
     @Inject
-    private ObjectMapper mapper;
+    private JacksonConfiguration jacksonConfiguration;
 
     @BeforeEach
     void setUp() {
@@ -73,9 +71,7 @@ class JobResourceTest {
                 .expirationTime(ZonedDateTime.now().plusMinutes(1))
                 .priority(1)
                 .build();
-        String str = mapper.writeValueAsString(job);
-        System.out.println(str);
-        return str;
+        return jacksonConfiguration.objectMapper().writeValueAsString(job);
     }
 
     @Test
