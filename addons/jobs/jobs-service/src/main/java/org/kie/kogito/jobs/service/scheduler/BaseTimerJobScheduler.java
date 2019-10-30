@@ -54,9 +54,9 @@ public abstract class BaseTimerJobScheduler implements ReactiveJobScheduler<Sche
                 //1- check if the job is already scheduled
                 .fromCompletionStage(jobRepository.exists(job.getId()))
                 .flatMapCompletionStage(exists -> exists
-                        ? cancel(job.getId())
+                        ? cancel(job.getId()).thenApply(Objects::nonNull)
                         : CompletableFuture.completedFuture(Boolean.TRUE))
-                .filter(Boolean.TRUE::equals)
+                //.filter(Boolean.TRUE::equals)
                 //2- calculate the delay (when the job should be executed)
                 .map(checked -> job.getExpirationTime())
                 .map(expirationTime -> Duration.between(ZonedDateTime.now(ZoneId.of("UTC")), expirationTime))
