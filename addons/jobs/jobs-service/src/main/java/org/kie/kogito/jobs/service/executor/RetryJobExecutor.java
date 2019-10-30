@@ -14,23 +14,16 @@
  * limitations under the License.
  */
 
-package org.kie.kogito.jobs.service.repository;
+package org.kie.kogito.jobs.service.executor;
 
-import java.time.ZonedDateTime;
 import java.util.concurrent.CompletionStage;
 
-import org.kie.kogito.jobs.service.model.ScheduledJob;
-import org.reactivestreams.Publisher;
+import org.kie.kogito.jobs.api.Job;
 
-public interface ReactiveJobRepository {
+public class RetryJobExecutor implements JobExecutor {
 
-    CompletionStage<ScheduledJob> save(ScheduledJob job);
-
-    CompletionStage<ScheduledJob> get(String id);
-
-    Publisher<ScheduledJob> getByTime(ZonedDateTime expirationTime);
-
-    CompletionStage<Boolean> exists(String id);
-
-    CompletionStage<ScheduledJob> delete(String id);
+    @Override
+    public CompletionStage<Job> execute(Job job) {
+        return null;
+    }
 }

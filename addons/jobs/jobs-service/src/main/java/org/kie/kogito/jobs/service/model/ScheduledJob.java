@@ -16,14 +16,18 @@
 
 package org.kie.kogito.jobs.service.model;
 
+import java.util.Optional;
+import java.util.StringJoiner;
+
 import org.kie.kogito.jobs.api.Job;
 
 public class ScheduledJob {
 
     private Job job;
-    private Long scheduledId;
+    private String scheduledId;
+    private Integer retries;
 
-    public ScheduledJob(Job job, Long scheduledId) {
+    public ScheduledJob(Job job, String scheduledId) {
         this.job = job;
         this.scheduledId = scheduledId;
     }
@@ -32,7 +36,20 @@ public class ScheduledJob {
         return job;
     }
 
-    public Long getScheduledId() {
+    public String getScheduledId() {
         return scheduledId;
+    }
+
+    public Integer getRetries() {
+        return retries;
+    }
+
+    @Override
+    public String toString() {
+        return new StringJoiner(", ", ScheduledJob.class.getSimpleName() + "[", "]")
+                .add("job=" + Optional.ofNullable(job).map(Job::getId).orElse(null))
+                .add("scheduledId='" + scheduledId + "'")
+                .add("retries=" + retries)
+                .toString();
     }
 }

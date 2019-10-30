@@ -14,23 +14,17 @@
  * limitations under the License.
  */
 
-package org.kie.kogito.jobs.service.repository;
+package org.kie.kogito.jobs.service.model;
 
-import java.time.ZonedDateTime;
-import java.util.concurrent.CompletionStage;
+public class ErrorResponse {
 
-import org.kie.kogito.jobs.service.model.ScheduledJob;
-import org.reactivestreams.Publisher;
+    private String message;
 
-public interface ReactiveJobRepository {
+    public ErrorResponse(String message) {
+        this.message = message;
+    }
 
-    CompletionStage<ScheduledJob> save(ScheduledJob job);
-
-    CompletionStage<ScheduledJob> get(String id);
-
-    Publisher<ScheduledJob> getByTime(ZonedDateTime expirationTime);
-
-    CompletionStage<Boolean> exists(String id);
-
-    CompletionStage<ScheduledJob> delete(String id);
+    public String getMessage() {
+        return message;
+    }
 }

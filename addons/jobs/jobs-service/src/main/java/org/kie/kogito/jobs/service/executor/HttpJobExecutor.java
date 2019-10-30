@@ -16,29 +16,72 @@
 
 package org.kie.kogito.jobs.service.executor;
 
+import java.net.URL;
+import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 
+import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
+import io.vertx.axle.core.Vertx;
+import io.vertx.axle.ext.web.client.WebClient;
 import org.kie.kogito.jobs.api.Job;
-import org.kie.kogito.jobs.service.client.RestClientService;
+import org.kie.kogito.jobs.service.converters.HttpConverters;
 import org.kie.kogito.jobs.service.model.HTTPRequestCallback;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @ApplicationScoped
-public class HttpJobExecutor implements JobExecutor{
+public class HttpJobExecutor implements JobExecutor {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(HttpJobExecutor.class);
 
     @Inject
-    private RestClientService restClientService;
+    private Vertx vertx;
+
+    private WebClient client;
+
+    @Inject
+    private HttpConverters httpConverters;
+
+    @PostConstruct
+    void initialize() {
+        this.client = WebClient.create(vertx);
+    }
+
+    private CompletionStage<Boolean> executeCallback(HTTPRequestCallback request) {
+        LOGGER.info("Executing callback {}", request);
+        final URL url = httpConverters.convertURL(request.getUrl());
+        return client.request(httpConverters.convertHttpMethod(request.getMethod()),
+                              url.getPort(),
+                              url.getHost(),
+                              url.getPath())
+                .send()
+                .thenApplyAsync(response -> Optional
+                        .ofNullable(response.statusCode())
+                        .filter(new Integer(200)::equals)
+                        .map(code -> Boolean.TRUE)
+                        .orElse(Boolean.FALSE));
+    }
 
     @Override
-    public CompletionStage<Boolean> execute(Job job) {
+    public CompletionStage<Job> execute(Job job) {
         //Using just POST method for now
         final HTTPRequestCallback callback = HTTPRequestCallback.builder()
                 .url(job.getCallbackEndpoint())
                 .method(HTTPRequestCallback.HTTPMethod.POST)
                 .build();
 
-        return restClientService.executeCallback(callback);
+        return executeCallback(callback)
+                .thenApply(result -> {
+                    LOGGER.info("Response of executed job {} {}", result, job);
+                    return job;
+                })
+                //handle error
+                .exceptionally(ex -> {
+                    LOGGER.error("error executing job " + job, ex);
+                    return job;
+                });
     }
 }

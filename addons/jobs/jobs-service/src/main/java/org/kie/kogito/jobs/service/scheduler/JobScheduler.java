@@ -22,5 +22,5 @@ public interface JobScheduler<T, C> {
 
     T schedule(Job job);
 
-    C cancel(Job id);
+    C cancel(String jobId);
 }

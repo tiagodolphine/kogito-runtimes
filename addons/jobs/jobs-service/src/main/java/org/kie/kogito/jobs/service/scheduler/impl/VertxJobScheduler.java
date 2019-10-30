@@ -17,18 +17,15 @@
 package org.kie.kogito.jobs.service.scheduler.impl;
 
 import java.time.Duration;
-import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
 import io.vertx.axle.core.Vertx;
+import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.kie.kogito.jobs.api.Job;
 import org.kie.kogito.jobs.service.model.ScheduledJob;
-import org.kie.kogito.jobs.service.repository.ReactiveJobRepository;
 import org.kie.kogito.jobs.service.scheduler.BaseTimerJobScheduler;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
@@ -38,29 +35,19 @@ import org.slf4j.LoggerFactory;
  * Job Scheduler based on Vert.x engine.
  */
 @ApplicationScoped
-public class VertxJobScheduler extends BaseTimerJobScheduler<Long> {
+public class VertxJobScheduler extends BaseTimerJobScheduler {
 
     private Logger logger = LoggerFactory.getLogger(VertxJobScheduler.class);
 
     @Inject
     private Vertx vertx;
 
-    @Inject
-    private ReactiveJobRepository jobRepository;
-
     @Override
-    public Publisher<Long> doSchedule(Duration delay, Job job) {
-        logger.debug("Job Scheduling {}",job);
+    public Publisher<ScheduledJob> doSchedule(Duration delay, Job job) {
+        logger.debug("Job Scheduling {}", job);
         return ReactiveStreams
-                .fromCompletionStage(jobRepository.exists(job.getId()))
-                .flatMapCompletionStage(exists -> exists
-                        ? cancel(job)
-                        : CompletableFuture.completedFuture(Boolean.TRUE))
-                .filter(Boolean.TRUE::equals)
-                .map(j -> setTimer(delay, job))
-                .map(id -> jobRepository.save(new ScheduledJob(job, id)))
-                .flatMapCompletionStage(p -> p)
-                .map(ScheduledJob::getScheduledId)
+                .of(setTimer(delay, job))
+                .map(id -> new ScheduledJob(job, String.valueOf(id)))
                 .buildRs();
     }
 
@@ -69,16 +56,11 @@ public class VertxJobScheduler extends BaseTimerJobScheduler<Long> {
     }
 
     @Override
-    public CompletionStage<Boolean> cancel(Job job) {
-        logger.debug("Cancel Job Scheduling {}",job);
+    public PublisherBuilder<Boolean> doCancel(ScheduledJob scheduledJob) {
         return ReactiveStreams
-                .fromCompletionStageNullable(jobRepository.get(job.getId()))
+                .of(scheduledJob)
                 .map(ScheduledJob::getScheduledId)
-                .map(vertx::cancelTimer)
-                .map(r -> jobRepository.delete(job.getId()))
-                .findFirst()
-                .run()
-                .thenApply(Optional::isPresent);
-
+                .map(Long::valueOf)
+                .map(vertx::cancelTimer);
     }
 }

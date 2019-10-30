@@ -19,11 +19,12 @@ package org.kie.kogito.jobs.service.scheduler;
 import java.util.concurrent.CompletionStage;
 
 import org.kie.kogito.jobs.api.Job;
+import org.kie.kogito.jobs.service.model.ScheduledJob;
 import org.reactivestreams.Publisher;
 
-public interface ReactiveJobScheduler<T> extends JobScheduler<Publisher<T>, CompletionStage<Boolean>> {
+public interface ReactiveJobScheduler<T> extends JobScheduler<Publisher<T>, CompletionStage<ScheduledJob>> {
 
     Publisher<T> schedule(Job job);
 
-    CompletionStage<Boolean> cancel(Job job);
+    CompletionStage<ScheduledJob> cancel(String jobId);
 }

@@ -19,36 +19,74 @@ package org.kie.kogito.jobs.service.scheduler;
 import java.time.Duration;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 import javax.inject.Inject;
 
+import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.kie.kogito.jobs.api.Job;
 import org.kie.kogito.jobs.service.executor.JobExecutor;
+import org.kie.kogito.jobs.service.model.ScheduledJob;
+import org.kie.kogito.jobs.service.repository.ReactiveJobRepository;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class BaseTimerJobScheduler<T> implements ReactiveJobScheduler<T> {
+/**
+ * Base reactive Job Scheduler that performs the fundamental operations and let to the concrete classes to
+ * implement the scheduling actions.
+ */
+public abstract class BaseTimerJobScheduler implements ReactiveJobScheduler<ScheduledJob> {
 
     private Logger logger = LoggerFactory.getLogger(BaseTimerJobScheduler.class);
 
     @Inject
     private JobExecutor jobExecutor;
 
-    public Publisher<T> schedule(Job job) {
-        return ReactiveStreams.of(job.getExpirationTime())
+    @Inject
+    private ReactiveJobRepository jobRepository;
+
+    @Override
+    public Publisher<ScheduledJob> schedule(Job job) {
+        return ReactiveStreams
+                //1- check if the job is already scheduled
+                .fromCompletionStage(jobRepository.exists(job.getId()))
+                .flatMapCompletionStage(exists -> exists
+                        ? cancel(job.getId())
+                        : CompletableFuture.completedFuture(Boolean.TRUE))
+                .filter(Boolean.TRUE::equals)
+                //2- calculate the delay (when the job should be executed)
+                .map(checked -> job.getExpirationTime())
                 .map(expirationTime -> Duration.between(ZonedDateTime.now(ZoneId.of("UTC")), expirationTime))
+                //3- schedule the job
                 .map(delay -> doSchedule(delay, job))
                 .flatMapRsPublisher(p -> p)
+                .map(scheduledJob -> jobRepository.save(scheduledJob))
+                .flatMapCompletionStage(p -> p)
                 .buildRs();
     }
 
-    public abstract Publisher<T> doSchedule(Duration delay, Job job);
+    public abstract Publisher<ScheduledJob> doSchedule(Duration delay, Job job);
 
-    protected void execute(Job job) {
+    protected CompletionStage<Job> execute(Job job) {
         logger.info("Job executed ! {}", job);
-        jobExecutor.execute(job)
-                .thenAccept(result -> logger.info("Response of executed job {} {}", result, job));
+        return jobExecutor.execute(job);
     }
+
+    @Override
+    public CompletionStage<ScheduledJob> cancel(String jobId) {
+        logger.debug("Cancel Job Scheduling {}", jobId);
+        return ReactiveStreams
+                .fromCompletionStageNullable(jobRepository.get(jobId))
+                .map(this::doCancel)
+                .map(r -> jobRepository.delete(jobId))
+                .findFirst()
+                .run()
+                .thenCompose(job -> job.orElseThrow(()-> new RuntimeException("Failed to cancel job scheduling")));
+    }
+
+    public abstract PublisherBuilder<Boolean> doCancel(ScheduledJob scheduledJob);
 }

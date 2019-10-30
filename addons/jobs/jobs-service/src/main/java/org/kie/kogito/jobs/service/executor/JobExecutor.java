@@ -22,5 +22,5 @@ import org.kie.kogito.jobs.api.Job;
 
 public interface JobExecutor {
 
-    CompletionStage<Boolean> execute(Job job);
+    CompletionStage<Job> execute(Job job);
 }
