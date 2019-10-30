@@ -80,7 +80,7 @@ public class HttpJobExecutor implements JobExecutor {
                 })
                 //handle error
                 .exceptionally(ex -> {
-                    LOGGER.error("error executing job " + job, ex);
+                    LOGGER.error("Error executing job " + job, ex);
                     return job;
                 });
     }

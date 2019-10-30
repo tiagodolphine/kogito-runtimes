@@ -17,8 +17,13 @@
 package org.kie.kogito.jobs.service.scheduler;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalUnit;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -55,9 +60,9 @@ public abstract class BaseTimerJobScheduler implements ReactiveJobScheduler<Sche
                 //1- check if the job is already scheduled
                 .fromCompletionStage(jobRepository.exists(job.getId()))
                 .flatMapCompletionStage(exists -> exists
-                        ? cancel(job.getId())
+                        ? cancel(job.getId()).thenApply(Objects::nonNull)
                         : CompletableFuture.completedFuture(Boolean.TRUE))
-                .filter(Boolean.TRUE::equals)
+                //.filter(Boolean.TRUE::equals)
                 //2- calculate the delay (when the job should be executed)
                 .map(checked -> job.getExpirationTime())
                 .map(expirationTime -> Duration.between(ZonedDateTime.now(ZoneId.of("UTC")), expirationTime))
