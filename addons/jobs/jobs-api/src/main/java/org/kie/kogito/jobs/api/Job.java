@@ -16,16 +16,17 @@
 package org.kie.kogito.jobs.api;
 
 import java.time.ZonedDateTime;
+import java.util.Objects;
 
 /**
- * Job describes the actual entity that should be scheduled and executed 
+ * Job describes the actual entity that should be scheduled and executed
  * upon given expiration time. The job requires following information
  * <ul>
  *  <li>id - unique UUID based identifier</li>
  *  <li>expirationTime - the time when this job should be executed</li>
  *  <li>callbackEndpoint - the callback endpoint (http/https) that will be invoked upon expiration</li>
  * </ul>
- * 
+ *
  * On top of that there are additional meta data that points the job to the owner - such as process instance.
  * <ul>
  *  <li>processInstanceId - process instance that owns the job</li>
@@ -48,6 +49,20 @@ public class Job {
     private String rootProcessInstanceId;
     private String processId;
     private String rootProcessId;
+
+    public Job() {
+    }
+
+    public Job(String id, ZonedDateTime expirationTime, Integer priority, String callbackEndpoint, String processInstanceId, String rootProcessInstanceId, String processId, String rootProcessId) {
+        this.id = id;
+        this.expirationTime = expirationTime;
+        this.priority = priority;
+        this.callbackEndpoint = callbackEndpoint;
+        this.processInstanceId = processInstanceId;
+        this.rootProcessInstanceId = rootProcessInstanceId;
+        this.processId = processId;
+        this.rootProcessId = rootProcessId;
+    }
 
     public String getId() {
         return id;
@@ -111,6 +126,30 @@ public class Job {
 
     public void setRootProcessId(String rootProcessId) {
         this.rootProcessId = rootProcessId;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof Job)) {
+            return false;
+        }
+        Job job = (Job) o;
+        return Objects.equals(getId(), job.getId()) &&
+                Objects.equals(getExpirationTime(), job.getExpirationTime()) &&
+                Objects.equals(getPriority(), job.getPriority()) &&
+                Objects.equals(getCallbackEndpoint(), job.getCallbackEndpoint()) &&
+                Objects.equals(getProcessInstanceId(), job.getProcessInstanceId()) &&
+                Objects.equals(getRootProcessInstanceId(), job.getRootProcessInstanceId()) &&
+                Objects.equals(getProcessId(), job.getProcessId()) &&
+                Objects.equals(getRootProcessId(), job.getRootProcessId());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getId(), getExpirationTime(), getPriority(), getCallbackEndpoint(), getProcessInstanceId(), getRootProcessInstanceId(), getProcessId(), getRootProcessId());
     }
 
     @Override
