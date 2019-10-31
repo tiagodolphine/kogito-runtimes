@@ -62,7 +62,7 @@ public abstract class BaseTimerJobScheduler implements ReactiveJobScheduler<Sche
                 .flatMapCompletionStage(exists -> exists
                         ? cancel(job.getId()).thenApply(Objects::nonNull)
                         : CompletableFuture.completedFuture(Boolean.TRUE))
-                //.filter(Boolean.TRUE::equals)
+                .filter(Boolean.TRUE::equals)
                 //2- calculate the delay (when the job should be executed)
                 .map(checked -> job.getExpirationTime())
                 .map(expirationTime -> Duration.between(ZonedDateTime.now(ZoneId.of("UTC")), expirationTime))
@@ -86,12 +86,13 @@ public abstract class BaseTimerJobScheduler implements ReactiveJobScheduler<Sche
         logger.debug("Cancel Job Scheduling {}", jobId);
         return ReactiveStreams
                 .fromCompletionStageNullable(jobRepository.get(jobId))
-                .map(this::doCancel)
+                .flatMapRsPublisher(this::doCancel)
+                .filter(Boolean.TRUE::equals)
                 .map(r -> jobRepository.delete(jobId))
                 .findFirst()
                 .run()
-                .thenCompose(job -> job.orElseThrow(()-> new RuntimeException("Failed to cancel job scheduling")));
+                .thenCompose(job -> job.orElseThrow(()-> new RuntimeException("Failed to cancel job scheduling " + jobId)));
     }
 
-    public abstract PublisherBuilder<Boolean> doCancel(ScheduledJob scheduledJob);
+    public abstract Publisher<Boolean> doCancel(ScheduledJob scheduledJob);
 }

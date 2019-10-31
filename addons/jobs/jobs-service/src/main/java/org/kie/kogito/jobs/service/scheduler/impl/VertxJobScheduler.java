@@ -22,7 +22,6 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
 import io.vertx.axle.core.Vertx;
-import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.kie.kogito.jobs.api.Job;
 import org.kie.kogito.jobs.service.model.ScheduledJob;
@@ -56,11 +55,12 @@ public class VertxJobScheduler extends BaseTimerJobScheduler {
     }
 
     @Override
-    public PublisherBuilder<Boolean> doCancel(ScheduledJob scheduledJob) {
+    public Publisher<Boolean> doCancel(ScheduledJob scheduledJob) {
         return ReactiveStreams
                 .of(scheduledJob)
                 .map(ScheduledJob::getScheduledId)
                 .map(Long::valueOf)
-                .map(vertx::cancelTimer);
+                .map(vertx::cancelTimer)
+                .buildRs();
     }
 }
