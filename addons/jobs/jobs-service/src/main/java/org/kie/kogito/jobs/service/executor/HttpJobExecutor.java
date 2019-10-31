@@ -29,6 +29,7 @@ import io.vertx.axle.ext.web.client.WebClient;
 import org.kie.kogito.jobs.api.Job;
 import org.kie.kogito.jobs.service.converters.HttpConverters;
 import org.kie.kogito.jobs.service.model.HTTPRequestCallback;
+import org.kie.kogito.jobs.service.repository.ReactiveJobRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,6 +45,9 @@ public class HttpJobExecutor implements JobExecutor {
 
     @Inject
     private HttpConverters httpConverters;
+
+    @Inject
+    private ReactiveJobRepository jobRepository;
 
     @PostConstruct
     void initialize() {
@@ -76,6 +80,7 @@ public class HttpJobExecutor implements JobExecutor {
         return executeCallback(callback)
                 .thenApply(result -> {
                     LOGGER.info("Response of executed job {} {}", result, job);
+                    jobRepository.delete(job.getId());
                     return job;
                 })
                 //handle error
