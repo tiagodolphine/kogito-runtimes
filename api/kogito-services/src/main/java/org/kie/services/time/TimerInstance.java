@@ -14,12 +14,10 @@
  * limitations under the License.
  */
 
-package org.kie.services.time.manager;
+package org.kie.services.time;
 
 import java.io.Serializable;
 import java.util.Date;
-
-import org.kie.services.time.JobHandle;
 
 /**
  * 
@@ -29,8 +27,8 @@ public class TimerInstance implements Serializable{
     /** Generated serial version UID */
     private static final long serialVersionUID = 9161292833931227195L;
     
-    private long id;
-    private String timerId;
+    private String id;
+    private long timerId;
     private long delay;
     private long period;
     private JobHandle jobHandle;
@@ -41,19 +39,19 @@ public class TimerInstance implements Serializable{
     private long sessionId;
     private String cronExpression;
     
-    public long getId() {
+    public String getId() {
         return id;
     }
     
-    public void setId(long id) {
+    public void setId(String id) {
         this.id = id;
     }
     
-    public String getTimerId() {
+    public long getTimerId() {
 		return timerId;
 	}
 
-	public void setTimerId(String timerId) {
+	public void setTimerId(long timerId) {
 		this.timerId = timerId;
 	}
 
@@ -133,6 +131,14 @@ public class TimerInstance implements Serializable{
     public String toString() {
         return "TimerInstance [id=" + id + ", timerId=" + timerId + ", delay=" + delay + ", period=" + period + ", jobHandle=" + jobHandle + ", activated=" + activated + ", lastTriggered=" + lastTriggered + ", processInstanceId=" + processInstanceId
                + "]";
+    }
+    
+    public static TimerInstance with(long timerId, String id) {
+        TimerInstance timerInstance = new TimerInstance();
+        timerInstance.setId(id);
+        timerInstance.setTimerId(timerId);
+        
+        return timerInstance;
     }
 
 }

@@ -30,17 +30,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.drools.core.command.SingleSessionCommandService;
-import org.drools.core.command.impl.CommandBasedStatefulKnowledgeSession;
 import org.drools.core.command.runtime.process.SetProcessInstanceVariablesCommand;
-import org.drools.core.impl.StatefulKnowledgeSessionImpl;
 import org.drools.core.process.instance.WorkItemHandler;
 import org.jbpm.bpmn2.handler.ReceiveTaskHandler;
 import org.jbpm.bpmn2.handler.SendTaskHandler;
 import org.jbpm.bpmn2.objects.Person;
 import org.jbpm.bpmn2.objects.TestWorkItemHandler;
 import org.jbpm.bpmn2.test.RequirePersistence;
-import org.jbpm.process.instance.InternalProcessRuntime;
 import org.jbpm.process.instance.event.listeners.RuleAwareProcessEventListener;
 import org.jbpm.process.instance.impl.demo.DoNothingWorkItemHandler;
 import org.jbpm.process.instance.impl.demo.SystemOutWorkItemHandler;
@@ -66,8 +62,6 @@ import org.kie.api.runtime.process.WorkflowProcessInstance;
 import org.kie.api.runtime.rule.FactHandle;
 import org.kie.internal.command.RegistryContext;
 import org.kie.internal.runtime.StatefulKnowledgeSession;
-import org.kie.services.time.manager.TimerInstance;
-import org.kie.services.time.manager.TimerManager;
 
 public class IntermediateEventTest extends JbpmBpmn2TestCase {
 
@@ -94,19 +88,6 @@ public class IntermediateEventTest extends JbpmBpmn2TestCase {
         }
 
     };
-
-    /*
-     * helper methods
-     */
-
-    private TimerManager getTimerManager(KieSession ksession) {
-        KieSession internal = ksession;
-        if (ksession instanceof CommandBasedStatefulKnowledgeSession) {
-            internal = ( (SingleSessionCommandService) ( (CommandBasedStatefulKnowledgeSession) ksession ).getRunner() ).getKieSession();;
-        }
-
-        return ((InternalProcessRuntime)((StatefulKnowledgeSessionImpl)internal).getProcessRuntime()).getTimerManager();
-    }
 
     /*
      * TESTS!
@@ -1166,19 +1147,13 @@ public class IntermediateEventTest extends JbpmBpmn2TestCase {
         ksession.getWorkItemManager().registerWorkItemHandler("Human Task", handler);
         ProcessInstance processInstance = ksession.startProcess("TimerBoundaryEvent");
         assertProcessInstanceActive(processInstance);
-        Collection<TimerInstance> timers = getTimerManager(ksession).getTimers();
-        assertThat(timers.size()).isEqualTo(1);
 
         ksession = restoreSession(ksession, true);
-        ksession.getWorkItemManager().registerWorkItemHandler("Human Task", handler);
-        timers = getTimerManager(ksession).getTimers();
-        assertThat(timers.size()).isEqualTo(1);
+        ksession.getWorkItemManager().registerWorkItemHandler("Human Task", handler);        
         ksession.getWorkItemManager().completeWorkItem(handler.getWorkItem().getId(), null);
 
         ksession = restoreSession(ksession, true);
-        ksession.getWorkItemManager().registerWorkItemHandler("Human Task", handler);
-        timers = getTimerManager(ksession).getTimers();
-        assertThat(timers).isNullOrEmpty();
+        ksession.getWorkItemManager().registerWorkItemHandler("Human Task", handler);        
         WorkItem workItem = handler.getWorkItem();
         if (workItem != null) {
             ksession.getWorkItemManager().completeWorkItem(workItem.getId(), null);
@@ -1970,7 +1945,7 @@ public class IntermediateEventTest extends JbpmBpmn2TestCase {
     }
 
     @Test
-    @Timeout(1000)
+    @Timeout(10)
     public void testTimerMultipleInstances() throws Exception {
         NodeLeftCountDownProcessEventListener countDownListener = new NodeLeftCountDownProcessEventListener("timer", 3);
         KieBase kbase = createKnowledgeBase("BPMN2-MultiInstanceLoopBoundaryTimer.bpmn2");

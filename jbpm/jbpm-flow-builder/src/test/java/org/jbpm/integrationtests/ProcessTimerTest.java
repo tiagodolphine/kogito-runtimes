@@ -108,7 +108,6 @@ public class ProcessTimerTest extends AbstractBaseTest {
         	session.startProcess("org.drools.timer");
         assertEquals(0, myList.size());
         assertEquals(ProcessInstance.STATE_ACTIVE, processInstance.getState());
-        assertEquals(1, ((InternalProcessRuntime) ((InternalWorkingMemory) session).getProcessRuntime()).getTimerManager().getTimers().size());
 
         // test that the delay works
         try {
@@ -204,7 +203,6 @@ public class ProcessTimerTest extends AbstractBaseTest {
         	session.startProcess("org.drools.timer", params);
         assertEquals(0, myList.size());
         assertEquals(ProcessInstance.STATE_ACTIVE, processInstance.getState());
-        assertEquals(1, ((InternalProcessRuntime) ((InternalWorkingMemory) session).getProcessRuntime()).getTimerManager().getTimers().size());
 
         // test that the delay works
         try {
@@ -307,8 +305,7 @@ public class ProcessTimerTest extends AbstractBaseTest {
         	session.startProcess("org.drools.timer");
         assertEquals(0, myList.size());
         assertEquals(ProcessInstance.STATE_ACTIVE, processInstance.getState());
-        assertEquals(1, ((InternalProcessRuntime) ((InternalWorkingMemory) session).getProcessRuntime()).getTimerManager().getTimers().size());
-        
+       
         try {
             Thread.sleep(400);
         } catch (InterruptedException e) {
@@ -377,7 +374,6 @@ public class ProcessTimerTest extends AbstractBaseTest {
         	session.startProcess("org.drools.timer", params);
         assertEquals(0, myList.size());
         assertEquals(ProcessInstance.STATE_ACTIVE, processInstance.getState());
-        assertEquals(1, ((InternalProcessRuntime) ((InternalWorkingMemory) session).getProcessRuntime()).getTimerManager().getTimers().size());
         
         try {
             Thread.sleep(400);
@@ -436,8 +432,7 @@ public class ProcessTimerTest extends AbstractBaseTest {
         	session.startProcess("org.drools.timer");
         assertEquals(0, myList.size());
         assertEquals(ProcessInstance.STATE_ACTIVE, processInstance.getState());
-        assertEquals(1, ((InternalProcessRuntime) ((InternalWorkingMemory) session).getProcessRuntime()).getTimerManager().getTimers().size());
-        
+       
         try {
             Thread.sleep(400);
         } catch (InterruptedException e) {
@@ -535,7 +530,6 @@ public class ProcessTimerTest extends AbstractBaseTest {
         	session.startProcess("org.drools.timer");
         assertEquals(0, myList.size());
         assertEquals(ProcessInstance.STATE_ACTIVE, processInstance.getState());
-        assertEquals(1, ((InternalProcessRuntime) ((InternalWorkingMemory) session).getProcessRuntime()).getTimerManager().getTimers().size());
         session.halt();
         
         try {
@@ -609,16 +603,25 @@ public class ProcessTimerTest extends AbstractBaseTest {
         ProcessInstance processInstance = ( ProcessInstance ) session.startProcess("org.drools.timer");
         assertEquals(0, myList.size());
         assertEquals(ProcessInstance.STATE_ACTIVE, processInstance.getState());
-        assertEquals(2, ((InternalProcessRuntime) ((InternalWorkingMemory) session).getProcessRuntime()).getTimerManager().getTimers().size());        
         
         clock = ( SessionPseudoClock) session.getSessionClock();
         clock.advanceTime( 500,
-                           TimeUnit.MILLISECONDS );  
+                           TimeUnit.MILLISECONDS ); 
+        try {
+            Thread.sleep(600);
+        } catch (InterruptedException e) {
+            // do nothing
+        }
         assertEquals(1, myList.size());
         assertEquals("Executing timer2", myList.get(0));
 
         clock.advanceTime( 500,
                            TimeUnit.MILLISECONDS ); 
+        try {
+            Thread.sleep(600);
+        } catch (InterruptedException e) {
+            // do nothing
+        }
         assertEquals(2, myList.size());
         
         session.dispose();
@@ -669,12 +672,10 @@ public class ProcessTimerTest extends AbstractBaseTest {
         	session.startProcess("org.drools.timer");
         assertEquals(0, myList.size());
         assertEquals(ProcessInstance.STATE_ACTIVE, processInstance.getState());
-        assertEquals(1, ((InternalProcessRuntime) ((InternalWorkingMemory) session).getProcessRuntime()).getTimerManager().getTimers().size());
 		
         session.insert(new Message());
         session.fireAllRules();
         assertEquals(0, myList.size());
-        assertEquals(0, ((InternalProcessRuntime) ((InternalWorkingMemory) session).getProcessRuntime()).getTimerManager().getTimers().size());
         
         session.dispose();
 	}

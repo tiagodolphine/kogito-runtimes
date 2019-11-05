@@ -68,7 +68,9 @@ import org.kie.api.runtime.process.EventListener;
 import org.kie.api.runtime.process.NodeInstanceContainer;
 import org.kie.api.runtime.process.ProcessInstance;
 import org.kie.internal.process.CorrelationKey;
-import org.kie.services.time.manager.TimerInstance;
+import org.kie.kogito.jobs.DurationExpirationTime;
+import org.kie.kogito.jobs.ProcessInstanceJobDescription;
+import org.kie.services.time.TimerInstance;
 import org.mvel2.integration.VariableResolverFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -396,7 +398,7 @@ public abstract class WorkflowProcessInstanceImpl extends ProcessInstanceImpl
                         .cancel();
             }
             if (this.slaTimerId != null && !slaTimerId.trim().isEmpty()) {
-                processRuntime.getTimerManager().cancelTimer(this.slaTimerId);
+                processRuntime.getJobsService().cancelJob(this.slaTimerId);
                 logger.debug("SLA Timer {} has been canceled", this.slaTimerId);
             }
             removeEventListeners();
@@ -493,7 +495,7 @@ public abstract class WorkflowProcessInstanceImpl extends ProcessInstanceImpl
         if (slaDueDateExpression != null) {
             TimerInstance timer = configureSLATimer(slaDueDateExpression);
             if (timer != null) {
-                this.slaTimerId = timer.getTimerId();
+                this.slaTimerId = timer.getId();
                 this.slaDueDate = new Date(System.currentTimeMillis() + timer.getDelay());
                 this.slaCompliance = SLA_PENDING;
                 logger.debug("SLA for process instance {} is PENDING with due date {}", this.getId(), this.slaDueDate);
@@ -520,11 +522,12 @@ public abstract class WorkflowProcessInstanceImpl extends ProcessInstanceImpl
         }
 
         TimerInstance timerInstance = new TimerInstance();
-        timerInstance.setId(-1);
+        timerInstance.setTimerId(-1);
         timerInstance.setDelay(duration);
         timerInstance.setPeriod(0);
         if (useTimerSLATracking()) {
-            ((InternalProcessRuntime) kruntime.getProcessRuntime()).getTimerManager().registerTimer(timerInstance, this);
+            ProcessInstanceJobDescription description = ProcessInstanceJobDescription.of(-1L, DurationExpirationTime.after(duration), getId(), getProcessId());
+            timerInstance.setId(((InternalProcessRuntime) kruntime.getProcessRuntime()).getJobsService().scheduleProcessInstanceJob(description));
         }
         return timerInstance;
     }
@@ -582,7 +585,7 @@ public abstract class WorkflowProcessInstanceImpl extends ProcessInstanceImpl
 
             if ("timerTriggered".equals(type)) {
                 TimerInstance timer = (TimerInstance) event;
-                if (timer.getTimerId().equals(slaTimerId)) {
+                if (timer.getId().equals(slaTimerId)) {
                     handleSLAViolation();
                     // no need to pass the event along as it was purely for SLA tracking
                     return;

@@ -75,6 +75,7 @@ import org.kie.api.time.SessionClock;
 import org.kie.internal.event.rule.RuleEventListener;
 import org.kie.internal.process.CorrelationKey;
 import org.kie.kogito.Application;
+import org.kie.kogito.jobs.JobsService;
 import org.kie.services.time.TimerService;
 
 /**
@@ -245,7 +246,7 @@ public final class WrappedStatefulKnowledgeSessionForRHS
     public ProcessInstance startProcessInstance(String processInstanceId) {
         return delegate.startProcessInstance(processInstanceId);
     }
-    
+
     public ProcessInstance startProcessInstance(String processInstanceId, String trigger) {
         return delegate.startProcessInstance(processInstanceId, trigger);
     }
@@ -780,7 +781,13 @@ public final class WrappedStatefulKnowledgeSessionForRHS
         return delegate.getSessionClock();
     }
 
+<<<<<<< HEAD
     public Application getApplication() {
         return delegate.getApplication();
+=======
+    @Override
+    public JobsService getJobsService() {
+        return delegate.getJobsService();
+>>>>>>> further work on timer service
     }
 }

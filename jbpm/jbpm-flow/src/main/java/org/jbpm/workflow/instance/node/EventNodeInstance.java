@@ -16,6 +16,8 @@
 
 package org.jbpm.workflow.instance.node;
 
+import static org.jbpm.workflow.instance.impl.DummyEventListener.EMPTY_EVENT_LISTENER;
+
 import java.io.Serializable;
 import java.util.Date;
 import java.util.HashMap;
@@ -27,8 +29,6 @@ import org.jbpm.process.core.event.EventTransformer;
 import org.jbpm.process.instance.InternalProcessRuntime;
 import org.jbpm.process.instance.ProcessInstance;
 import org.jbpm.process.instance.context.variable.VariableScopeInstance;
-import org.kie.services.time.manager.TimerInstance;
-import org.kie.services.time.manager.TimerManager;
 import org.jbpm.util.PatternConstants;
 import org.jbpm.workflow.core.node.EventNode;
 import org.jbpm.workflow.instance.WorkflowProcessInstance;
@@ -36,8 +36,8 @@ import org.jbpm.workflow.instance.impl.ExtendedNodeInstanceImpl;
 import org.jbpm.workflow.instance.impl.WorkflowProcessInstanceImpl;
 import org.kie.api.runtime.process.EventListener;
 import org.kie.api.runtime.process.NodeInstance;
-
-import static org.jbpm.workflow.instance.impl.DummyEventListener.EMPTY_EVENT_LISTENER;
+import org.kie.kogito.jobs.JobsService;
+import org.kie.services.time.TimerInstance;
 
 /**
  * Runtime counterpart of an event node.
@@ -50,7 +50,7 @@ public class EventNodeInstance extends ExtendedNodeInstanceImpl implements Event
     public void signalEvent(String type, Object event) {
         if ("timerTriggered".equals(type)) {
             TimerInstance timerInstance = (TimerInstance) event;
-            if (timerInstance.getTimerId().equals(slaTimerId)) {                
+            if (timerInstance.getId().equals(slaTimerId)) {                
                 handleSLAViolation();        
             }
         } else if (("slaViolation:" + getId()).equals(type)) {
@@ -91,7 +91,7 @@ public class EventNodeInstance extends ExtendedNodeInstanceImpl implements Event
         if (slaDueDateExpression != null) {
             TimerInstance timer = ((WorkflowProcessInstanceImpl)getProcessInstance()).configureSLATimer(slaDueDateExpression);
             if (timer != null) {
-                this.slaTimerId = timer.getTimerId();
+                this.slaTimerId = timer.getId();
                 this.slaDueDate = new Date(System.currentTimeMillis() + timer.getDelay());
                 this.slaCompliance = ProcessInstance.SLA_PENDING;
                 logger.debug("SLA for node instance {} is PENDING with due date {}", this.getId(), this.slaDueDate);
@@ -112,9 +112,9 @@ public class EventNodeInstance extends ExtendedNodeInstanceImpl implements Event
     
     private void cancelSlaTimer() {
         if (this.slaTimerId != null && !this.slaTimerId.trim().isEmpty()) {
-            TimerManager timerManager = ((InternalProcessRuntime)
-                    getProcessInstance().getKnowledgeRuntime().getProcessRuntime()).getTimerManager();
-            timerManager.cancelTimer(this.slaTimerId);
+            JobsService jobService = ((InternalProcessRuntime)
+                    getProcessInstance().getKnowledgeRuntime().getProcessRuntime()).getJobsService();
+            jobService.cancelJob(this.slaTimerId);
             logger.debug("SLA Timer {} has been canceled", this.slaTimerId);
         }
     }
