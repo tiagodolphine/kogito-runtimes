@@ -23,13 +23,28 @@ import org.kie.kogito.jobs.api.Job;
 
 public class ScheduledJob {
 
+    public enum Status {
+        ERROR,
+        EXPIRED,
+        EXECUTED,
+        SCHEDULED,
+        RETRY,
+        CANCELED
+    }
+
     private Job job;
     private String scheduledId;
     private Integer retries;
+    private Status status;
 
-    public ScheduledJob(Job job, String scheduledId) {
+    public ScheduledJob() {
+    }
+
+    public ScheduledJob(Job job, String scheduledId, Integer retries, Status status) {
         this.job = job;
         this.scheduledId = scheduledId;
+        this.retries = retries;
+        this.status = status;
     }
 
     public Job getJob() {
@@ -44,6 +59,14 @@ public class ScheduledJob {
         return retries;
     }
 
+    public Status getStatus() {
+        return status;
+    }
+
+    public static ScheduledJobBuilder builder() {
+        return new ScheduledJobBuilder();
+    }
+
     @Override
     public String toString() {
         return new StringJoiner(", ", ScheduledJob.class.getSimpleName() + "[", "]")
@@ -51,5 +74,49 @@ public class ScheduledJob {
                 .add("scheduledId='" + scheduledId + "'")
                 .add("retries=" + retries)
                 .toString();
+    }
+
+    public static class ScheduledJobBuilder {
+
+        private Job job;
+        private String scheduledId;
+        private Integer retries = 0;
+        private Status status;
+
+        public ScheduledJobBuilder job(Job job) {
+            this.job = job;
+            return this;
+        }
+
+        public ScheduledJobBuilder scheduledId(String scheduledId) {
+            this.scheduledId = scheduledId;
+            return this;
+        }
+
+        public ScheduledJobBuilder retries(Integer retries) {
+            this.retries = retries;
+            return this;
+        }
+
+        public ScheduledJobBuilder incrementRetries() {
+            this.retries++;
+            return this;
+        }
+
+        public ScheduledJobBuilder of(ScheduledJob scheduledJob) {
+            return job(scheduledJob.getJob())
+                    .scheduledId(scheduledJob.getScheduledId())
+                    .retries(scheduledJob.getRetries())
+                    .status(scheduledJob.getStatus());
+        }
+
+        public ScheduledJobBuilder status(Status status) {
+            this.status = status;
+            return this;
+        }
+
+        public ScheduledJob build() {
+            return new ScheduledJob(job, scheduledId, retries, status);
+        }
     }
 }

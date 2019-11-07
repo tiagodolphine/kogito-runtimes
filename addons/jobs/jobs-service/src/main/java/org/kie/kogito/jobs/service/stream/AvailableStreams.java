@@ -14,16 +14,10 @@
  * limitations under the License.
  */
 
-package org.kie.kogito.jobs.service.executor;
+package org.kie.kogito.jobs.service.stream;
 
-import java.util.concurrent.CompletionStage;
+public final class AvailableStreams {
 
-import org.kie.kogito.jobs.api.Job;
-
-public class RetryJobExecutor implements JobExecutor {
-
-    @Override
-    public CompletionStage<Job> execute(Job job) {
-        return null;
-    }
+    public static final String JOB_ERROR = "job-error";
+    public static final String JOB_SUCCESS = "job-success";
 }
