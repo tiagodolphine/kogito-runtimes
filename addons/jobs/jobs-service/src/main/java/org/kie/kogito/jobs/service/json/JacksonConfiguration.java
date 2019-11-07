@@ -16,38 +16,29 @@
 
 package org.kie.kogito.jobs.service.json;
 
-import java.util.Optional;
-
-import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
-import javax.enterprise.inject.Specializes;
 import javax.inject.Singleton;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import io.quarkus.resteasy.jackson.runtime.ObjectMapperProducer;
+import io.quarkus.jackson.ObjectMapperCustomizer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @ApplicationScoped
-@Specializes
-public class JacksonConfiguration extends ObjectMapperProducer {
+public class JacksonConfiguration {
 
-    private ObjectMapper objectMapper;
-
-    @PostConstruct
-    private ObjectMapper init() {
-        objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new JavaTimeModule());
-        objectMapper.findAndRegisterModules();
-        objectMapper.disable(DeserializationFeature.ADJUST_DATES_TO_CONTEXT_TIME_ZONE);
-        return objectMapper;
-    }
+    private static final Logger LOGGER = LoggerFactory.getLogger(JacksonConfiguration.class);
 
     @Singleton
     @Produces
-    @Override
-    public ObjectMapper objectMapper() {
-        return Optional.ofNullable(objectMapper).orElse(init());
+    public ObjectMapperCustomizer customizer() {
+        return (objectMapper) -> {
+            LOGGER.info("Jackson customization initialized.");
+            objectMapper.registerModule(new JavaTimeModule());
+            objectMapper.findAndRegisterModules();
+            objectMapper.disable(DeserializationFeature.ADJUST_DATES_TO_CONTEXT_TIME_ZONE);
+        };
     }
 }

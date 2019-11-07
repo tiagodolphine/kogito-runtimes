@@ -19,6 +19,7 @@ package org.kie.kogito.jobs.service.resource;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -37,6 +38,7 @@ import org.kie.kogito.jobs.service.scheduler.impl.VertxJobScheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@ApplicationScoped
 @Path("/job")
 public class JobResource {
 
@@ -58,7 +60,7 @@ public class JobResource {
                 .findFirst()
                 .run()
                 .thenApply(j -> j.orElseThrow(() -> new RuntimeException("Failed to schedule job " + job.getId())))
-                .whenCompleteAsync((r, t) -> Optional
+                .whenComplete((r, t) -> Optional
                         .ofNullable(t)
                         .ifPresent(ex -> LOGGER.error("Error Scheduling Job: {}. Details: {}", job, t)));
         return response;
@@ -69,7 +71,7 @@ public class JobResource {
     @Path("/{id}")
     public CompletionStage<Job> delete(@PathParam("id") String id) {
         LOGGER.debug("REST delete id {}", id);
-        return  scheduler
+        return scheduler
                 .cancel(id)
                 .thenApply(result -> Optional
                         .ofNullable(result)
@@ -80,10 +82,9 @@ public class JobResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/{id}")
-    public CompletionStage<Job> get(@PathParam("id") String id) {
+    public CompletionStage<ScheduledJob> get(@PathParam("id") String id) {
         LOGGER.debug("REST get {}", id);
         return reactiveJobRepository
-                .get(id)
-                .thenApply(ScheduledJob::getJob);
+                .get(id);
     }
 }

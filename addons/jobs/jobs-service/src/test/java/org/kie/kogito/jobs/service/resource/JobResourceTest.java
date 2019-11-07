@@ -21,6 +21,7 @@ import java.time.ZonedDateTime;
 import javax.inject.Inject;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import io.restassured.response.ValidatableResponse;
@@ -28,16 +29,18 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.kie.kogito.jobs.api.Job;
 import org.kie.kogito.jobs.api.JobBuilder;
-import org.kie.kogito.jobs.service.json.JacksonConfiguration;
+import org.kie.kogito.jobs.service.model.ScheduledJob;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @QuarkusTest
 class JobResourceTest {
 
     @Inject
-    private JacksonConfiguration jacksonConfiguration;
+    private ObjectMapper objectMapper;
 
     @BeforeEach
     void setUp() {
@@ -71,7 +74,21 @@ class JobResourceTest {
                 .expirationTime(ZonedDateTime.now().plusMinutes(1))
                 .priority(1)
                 .build();
-        return jacksonConfiguration.objectMapper().writeValueAsString(job);
+        return objectMapper.writeValueAsString(job);
+    }
+
+    private String getScheduledJob(String id) throws JsonProcessingException {
+        final Job job = JobBuilder
+                .builder()
+                .id(id)
+                .expirationTime(ZonedDateTime.now().plusMinutes(1))
+                .priority(1)
+                .build();
+        final ScheduledJob scheduledJob = ScheduledJob.builder()
+                .status(ScheduledJob.Status.SCHEDULED)
+                .job(job)
+                .build();
+        return objectMapper.writeValueAsString(scheduledJob);
     }
 
     @Test
@@ -96,7 +113,7 @@ class JobResourceTest {
         final String id = "3";
         final String body = getJob(id);
         create(body);
-        given()
+        final ScheduledJob scheduledJob = given()
                 .pathParam("id", id)
                 .when()
                 .get("/job/{id}")
@@ -104,8 +121,11 @@ class JobResourceTest {
                 .statusCode(200)
                 .contentType(ContentType.JSON)
                 .assertThat()
-                .body(equalTo(body))
-                .log()
-                .body();
+                .extract()
+                .as(ScheduledJob.class);
+        assertEquals(scheduledJob.getJob(), objectMapper.readValue(body, Job.class));
+        assertEquals(scheduledJob.getRetries(), 0);
+        assertEquals(scheduledJob.getStatus(), ScheduledJob.Status.SCHEDULED);
+        assertNotNull(scheduledJob.getScheduledId());
     }
 }
