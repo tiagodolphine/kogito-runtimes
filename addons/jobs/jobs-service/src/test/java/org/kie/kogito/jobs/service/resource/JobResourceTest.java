@@ -16,43 +16,57 @@
 
 package org.kie.kogito.jobs.service.resource;
 
+import java.io.IOException;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
 import javax.inject.Inject;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import io.restassured.response.ValidatableResponse;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.kie.kogito.jobs.api.Job;
 import org.kie.kogito.jobs.api.JobBuilder;
+import org.kie.kogito.jobs.service.model.JobStatus;
 import org.kie.kogito.jobs.service.model.ScheduledJob;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @QuarkusTest
-class JobResourceTest {
+@QuarkusTestResource(InfinispanServerTestResource.class)
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+public class JobResourceTest {
+
+    private JobResourceTest() {
+
+    }
 
     @Inject
-    private ObjectMapper objectMapper;
+    ObjectMapper objectMapper;
 
-    @BeforeEach
-    void setUp() {
+    @BeforeAll
+    public void setup() {
+        // objectMapper = new ObjectMapper();
     }
 
     @Test
     void create() throws Exception {
-        final String body = getJob("1");
-        create(body);
+        final Job job = getJob("1");
+        final Job response = create(jobToJson(job))
+                .extract()
+                .as(Job.class);
+        assertEquals(job, response);
     }
 
-    private ValidatableResponse create(String body) {
+    private ValidatableResponse create(String body) throws IOException {
         return given()
                 .contentType(ContentType.JSON)
                 .body(body)
@@ -60,59 +74,44 @@ class JobResourceTest {
                 .post("/job")
                 .then()
                 .statusCode(200)
-                .contentType(ContentType.JSON)
-                .assertThat()
-                .body(equalTo(body))
-                .log()
-                .body();
+                .contentType(ContentType.JSON);
     }
 
-    private String getJob(String id) throws JsonProcessingException {
-        final Job job = JobBuilder
-                .builder()
-                .id(id)
-                .expirationTime(ZonedDateTime.now().plusMinutes(1))
-                .priority(1)
-                .build();
+    private String jobToJson(Job job) throws JsonProcessingException {
         return objectMapper.writeValueAsString(job);
     }
 
-    private String getScheduledJob(String id) throws JsonProcessingException {
-        final Job job = JobBuilder
+    private Job getJob(String id) throws JsonProcessingException {
+        return JobBuilder
                 .builder()
                 .id(id)
-                .expirationTime(ZonedDateTime.now().plusMinutes(1))
+                .expirationTime(ZonedDateTime.now(ZoneId.of("UTC")).plusSeconds(10))
+                .callbackEndpoint("http://localhost:8081/callback")
                 .priority(1)
                 .build();
-        final ScheduledJob scheduledJob = ScheduledJob.builder()
-                .status(ScheduledJob.Status.SCHEDULED)
-                .job(job)
-                .build();
-        return objectMapper.writeValueAsString(scheduledJob);
     }
 
     @Test
     void deleteAfterCreate() throws Exception {
         final String id = "2";
-        final String body = getJob(id);
-        create(body);
-        given().pathParam("id", id)
+        final Job job = getJob(id);
+        create(jobToJson(job));
+        final Job response = given().pathParam("id", id)
                 .when()
                 .delete("/job/{id}")
                 .then()
                 .statusCode(200)
                 .contentType(ContentType.JSON)
-                .assertThat()
-                .body(equalTo(body))
-                .log()
-                .body();
+                .extract()
+                .as(Job.class);
+        assertEquals(job, response);
     }
 
     @Test
     void getAfterCreate() throws Exception {
         final String id = "3";
-        final String body = getJob(id);
-        create(body);
+        final Job job = getJob(id);
+        create(jobToJson(job));
         final ScheduledJob scheduledJob = given()
                 .pathParam("id", id)
                 .when()
@@ -123,9 +122,30 @@ class JobResourceTest {
                 .assertThat()
                 .extract()
                 .as(ScheduledJob.class);
-        assertEquals(scheduledJob.getJob(), objectMapper.readValue(body, Job.class));
+        assertEquals(scheduledJob.getJob(), job);
         assertEquals(scheduledJob.getRetries(), 0);
-        assertEquals(scheduledJob.getStatus(), ScheduledJob.Status.SCHEDULED);
+        assertEquals(scheduledJob.getStatus(), JobStatus.SCHEDULED);
+        assertNotNull(scheduledJob.getScheduledId());
+    }
+
+    @Test
+    void executeTest() throws Exception {
+        final String id = "4";
+        final Job job = getJob(id);
+        create(jobToJson(job));
+        final ScheduledJob scheduledJob = given()
+                .pathParam("id", id)
+                .when()
+                .get("/job/{id}")
+                .then()
+                .statusCode(200)
+                .contentType(ContentType.JSON)
+                .assertThat()
+                .extract()
+                .as(ScheduledJob.class);
+        assertEquals(scheduledJob.getJob(), job);
+        assertEquals(scheduledJob.getRetries(), 0);
+        assertEquals(scheduledJob.getStatus(), JobStatus.SCHEDULED);
         assertNotNull(scheduledJob.getScheduledId());
     }
 }

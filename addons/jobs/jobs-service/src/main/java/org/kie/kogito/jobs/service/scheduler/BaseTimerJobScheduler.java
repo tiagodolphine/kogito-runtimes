@@ -32,8 +32,9 @@ import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.kie.kogito.jobs.api.Job;
 import org.kie.kogito.jobs.service.executor.JobExecutor;
 import org.kie.kogito.jobs.service.model.JobExecutionResponse;
+import org.kie.kogito.jobs.service.model.JobStatus;
 import org.kie.kogito.jobs.service.model.ScheduledJob;
-import org.kie.kogito.jobs.service.repository.ReactiveJobRepository;
+import org.kie.kogito.jobs.service.repository.infinispan.InfinispanJobRepository;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,10 +53,11 @@ public abstract class BaseTimerJobScheduler implements ReactiveJobScheduler<Sche
     private JobExecutor jobExecutor;
 
     @Inject
-    private ReactiveJobRepository jobRepository;
+    private InfinispanJobRepository jobRepository;
 
     @Override
     public Publisher<ScheduledJob> schedule(Job job) {
+        LOGGER.info("1- SCHEDULING {}", job);
         return ReactiveStreams
                 //1- check if the job is already scheduled
                 .fromCompletionStage(jobRepository.exists(job.getId()))
@@ -73,7 +75,7 @@ public abstract class BaseTimerJobScheduler implements ReactiveJobScheduler<Sche
                         .builder()
                         .job(job)
                         .scheduledId(scheduleId)
-                        .status(ScheduledJob.Status.SCHEDULED)
+                        .status(JobStatus.SCHEDULED)
                         .build())
                 .map(scheduledJob -> jobRepository.save(scheduledJob))
                 .flatMapCompletionStage(p -> p)
@@ -82,12 +84,12 @@ public abstract class BaseTimerJobScheduler implements ReactiveJobScheduler<Sche
 
     private PublisherBuilder<Boolean> handleExistingJob(Job job) {
         //always returns true, canceling in case the job is already schedule
-        return ReactiveStreams.concat(ReactiveStreams.fromCompletionStage(jobRepository.get(job.getId()))
-                                              .map(ScheduledJob::getStatus)
-                                              .filter(ScheduledJob.Status.SCHEDULED::equals)
-                                              .flatMapCompletionStage(status -> cancel(job.getId()))
-                                              .map(Objects::nonNull),
-                                      ReactiveStreams.of(Boolean.TRUE));
+        return ReactiveStreams.fromCompletionStage(jobRepository.get(job.getId()))
+                .map(ScheduledJob::getStatus)
+                .filter(JobStatus.SCHEDULED::equals)
+                .flatMapCompletionStage(status -> cancel(job.getId()))
+                .map(j -> Boolean.TRUE)
+                .onErrorResumeWith(t -> ReactiveStreams.of(Boolean.TRUE));
     }
 
     private Duration calculateDelay(ZonedDateTime expirationTime) {
@@ -102,7 +104,7 @@ public abstract class BaseTimerJobScheduler implements ReactiveJobScheduler<Sche
                 .map(scheduledJob -> ScheduledJob
                         .builder()
                         .of(scheduledJob)
-                        .status(ScheduledJob.Status.EXECUTED)
+                        .status(JobStatus.EXECUTED)
                         .build())
                 .flatMapCompletionStage(jobRepository::save);
     }
@@ -135,19 +137,19 @@ public abstract class BaseTimerJobScheduler implements ReactiveJobScheduler<Sche
                 .map(scheduledJob -> ScheduledJob
                         .builder()
                         .of(scheduledJob)
-                        .status(ScheduledJob.Status.ERROR)
+                        .status(JobStatus.ERROR)
                         .build())
                 .flatMapCompletionStage(jobRepository::save)
                 .flatMap(scheduledJob -> handleExpirationTime(scheduledJob)
                         .map(ScheduledJob::getStatus)
-                        .filter(ScheduledJob.Status.ERROR::equals)
+                        .filter(JobStatus.ERROR::equals)
                         .map(time -> doSchedule(Duration.ofMillis(BACKOFF_RETRY_MILLIS), scheduledJob.getJob()))
                         .flatMapRsPublisher(p -> p)
                         .map(scheduleId -> ScheduledJob
                                 .builder()
                                 .of(scheduledJob)
                                 .scheduledId(scheduleId)
-                                .status(ScheduledJob.Status.RETRY)
+                                .status(JobStatus.RETRY)
                                 .incrementRetries()
                                 .build())
                         .map(jobRepository::save)
@@ -157,7 +159,7 @@ public abstract class BaseTimerJobScheduler implements ReactiveJobScheduler<Sche
     private CompletionStage<ScheduledJob> handleExpiredJob(ScheduledJob scheduledJob) {
         return Optional.of(ScheduledJob.builder()
                                    .of(scheduledJob)
-                                   .status(ScheduledJob.Status.EXPIRED)
+                                   .status(JobStatus.EXPIRED)
                                    .build())
                 .map(jobRepository::save)
                 .orElse(null);
@@ -175,19 +177,20 @@ public abstract class BaseTimerJobScheduler implements ReactiveJobScheduler<Sche
         LOGGER.debug("Cancel Job Scheduling {}", jobId);
         return ReactiveStreams
                 .fromCompletionStageNullable(jobRepository.get(jobId))
-                .filter(scheduledJob -> ScheduledJob.Status.SCHEDULED.equals(scheduledJob.getStatus()))
+                .filter(scheduledJob -> JobStatus.SCHEDULED.equals(scheduledJob.getStatus()))
                 .flatMap(scheduledJob -> ReactiveStreams.of(scheduledJob)
                         .flatMapRsPublisher(this::doCancel)
                         .filter(Boolean.TRUE::equals)
                         .map(c -> ScheduledJob
                                 .builder()
                                 .of(scheduledJob)
-                                .status(ScheduledJob.Status.CANCELED)
+                                .status(JobStatus.CANCELED)
                                 .build())
                         .map(jobRepository::save))
                 .findFirst()
                 .run()
-                .thenCompose(job -> job.orElseThrow(() -> new RuntimeException("Failed to cancel job scheduling " + jobId)));
+                .thenCompose(job -> job.orElseThrow(() -> new RuntimeException("Failed to cancel scheduling for " +
+                                                                                       "job " + jobId)));
     }
 
     public abstract Publisher<Boolean> doCancel(ScheduledJob scheduledJob);

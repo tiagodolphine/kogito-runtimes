@@ -34,6 +34,12 @@
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-resteasy-jackson</artifactId>
     </dependency>
+
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-jackson</artifactId>
+    </dependency>
+
     <dependency>
       <groupId>com.fasterxml.jackson.datatype</groupId>
       <artifactId>jackson-datatype-jsr310</artifactId>
@@ -49,6 +55,13 @@
       <artifactId>quarkus-smallrye-reactive-messaging</artifactId>
     </dependency>
 
+    <!-- Persistence -->
+    <dependency>
+        <groupId>io.quarkus</groupId>
+        <artifactId>quarkus-infinispan-client</artifactId>
+    </dependency>
+
+
     <!-- Testing -->
     <dependency>
       <groupId>io.quarkus</groupId>
@@ -60,6 +73,14 @@
       <artifactId>rest-assured</artifactId>
       <scope>test</scope>
     </dependency>
+
+    <dependency>
+      <groupId>org.infinispan</groupId>
+      <artifactId>infinispan-server-hotrod</artifactId>
+
+    </dependency>
+
+
 
   </dependencies>
   <name>Jobs Service</name>
@@ -126,18 +147,14 @@
             </executions>
           </plugin>
           <plugin>
-            <artifactId>maven-failsafe-plugin</artifactId>
+            <groupId>org.jboss.jandex</groupId>
+            <artifactId>jandex-maven-plugin</artifactId>
             <executions>
               <execution>
+                <id>make-index</id>
                 <goals>
-                  <goal>integration-test</goal>
-                  <goal>verify</goal>
+                  <goal>jandex</goal>
                 </goals>
-                <configuration>
-                  <systemProperties>
-                    <native.image.path>${project.build.directory}/${project.build.finalName}-runner</native.image.path>
-                  </systemProperties>
-                </configuration>
               </execution>
             </executions>
           </plugin>

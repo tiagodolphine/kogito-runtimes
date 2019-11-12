@@ -33,7 +33,7 @@ import javax.ws.rs.core.MediaType;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.kie.kogito.jobs.api.Job;
 import org.kie.kogito.jobs.service.model.ScheduledJob;
-import org.kie.kogito.jobs.service.repository.ReactiveJobRepository;
+import org.kie.kogito.jobs.service.repository.infinispan.InfinispanJobRepository;
 import org.kie.kogito.jobs.service.scheduler.impl.VertxJobScheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,10 +45,10 @@ public class JobResource {
     private static final Logger LOGGER = LoggerFactory.getLogger(JobResource.class);
 
     @Inject
-    VertxJobScheduler scheduler;
+    private VertxJobScheduler scheduler;
 
     @Inject
-    ReactiveJobRepository reactiveJobRepository;
+    private InfinispanJobRepository reactiveJobRepository;
 
     @POST
     @Produces(MediaType.APPLICATION_JSON)

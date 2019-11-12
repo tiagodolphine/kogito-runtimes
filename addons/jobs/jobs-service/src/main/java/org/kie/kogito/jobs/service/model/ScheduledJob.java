@@ -19,28 +19,21 @@ package org.kie.kogito.jobs.service.model;
 import java.util.Optional;
 import java.util.StringJoiner;
 
+import io.quarkus.runtime.annotations.RegisterForReflection;
 import org.kie.kogito.jobs.api.Job;
 
+@RegisterForReflection
 public class ScheduledJob {
-
-    public enum Status {
-        ERROR,
-        EXPIRED,
-        EXECUTED,
-        SCHEDULED,
-        RETRY,
-        CANCELED
-    }
 
     private Job job;
     private String scheduledId;
     private Integer retries;
-    private Status status;
+    private JobStatus status;
 
     public ScheduledJob() {
     }
 
-    public ScheduledJob(Job job, String scheduledId, Integer retries, Status status) {
+    public ScheduledJob(Job job, String scheduledId, Integer retries, JobStatus status) {
         this.job = job;
         this.scheduledId = scheduledId;
         this.retries = retries;
@@ -59,7 +52,7 @@ public class ScheduledJob {
         return retries;
     }
 
-    public Status getStatus() {
+    public JobStatus getStatus() {
         return status;
     }
 
@@ -81,7 +74,7 @@ public class ScheduledJob {
         private Job job;
         private String scheduledId;
         private Integer retries = 0;
-        private Status status;
+        private JobStatus status;
 
         public ScheduledJobBuilder job(Job job) {
             this.job = job;
@@ -110,7 +103,7 @@ public class ScheduledJob {
                     .status(scheduledJob.getStatus());
         }
 
-        public ScheduledJobBuilder status(Status status) {
+        public ScheduledJobBuilder status(JobStatus status) {
             this.status = status;
             return this;
         }

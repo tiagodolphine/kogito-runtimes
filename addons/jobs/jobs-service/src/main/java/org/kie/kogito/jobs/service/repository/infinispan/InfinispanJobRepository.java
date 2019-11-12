@@ -14,63 +14,65 @@
  * limitations under the License.
  */
 
-package org.kie.kogito.jobs.service.repository.impl;
+package org.kie.kogito.jobs.service.repository.infinispan;
 
-import java.util.Map;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ConcurrentHashMap;
 
 import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Default;
+import javax.enterprise.inject.Typed;
 import javax.inject.Inject;
 
+import io.quarkus.infinispan.client.Remote;
 import io.vertx.core.Vertx;
 import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
-import org.kie.kogito.jobs.service.model.JobStatus;
+import org.infinispan.client.hotrod.RemoteCache;
 import org.kie.kogito.jobs.service.model.ScheduledJob;
 import org.kie.kogito.jobs.service.repository.ReactiveJobRepository;
+import org.kie.kogito.jobs.service.repository.impl.BaseReactiveJobRepository;
+
+import static org.kie.kogito.jobs.service.repository.infinispan.InfinispanConfiguration.Caches.SCHEDULED_JOBS;
 
 @ApplicationScoped
-@Default
-public class InMemoryJobRepository extends BaseReactiveJobRepository implements ReactiveJobRepository {
+@Typed(InfinispanJobRepository.class)
+public class InfinispanJobRepository extends BaseReactiveJobRepository implements ReactiveJobRepository {
 
-    private final Map<String, ScheduledJob> jobMap = new ConcurrentHashMap<>();
+    private RemoteCache<String, ScheduledJob> cache;
 
-    public InMemoryJobRepository() {
+    public InfinispanJobRepository() {
         super(null);
     }
 
     @Inject
-    public InMemoryJobRepository(Vertx vertx) {
+    public InfinispanJobRepository(Vertx vertx,
+                                   @Remote(SCHEDULED_JOBS) RemoteCache<String, ScheduledJob> cache) {
         super(vertx);
+        this.cache = cache;
     }
 
     @Override
     public CompletionStage<ScheduledJob> save(ScheduledJob job) {
-        return runAsync(() -> {
-            jobMap.put(job.getJob().getId(), job);
-            return job;
-        });
+        return runAsync(() -> cache.put(job.getJob().getId(), job))
+                .thenCompose(j -> get(job.getJob().getId()));
     }
 
     @Override
-    public CompletionStage<ScheduledJob> get(String key) {
-        return runAsync(() -> jobMap.get(key));
+    public CompletionStage<ScheduledJob> get(String id) {
+        return runAsync(() -> cache.get(id));
     }
 
     @Override
-    public CompletionStage<Boolean> exists(String key) {
-        return runAsync(() -> jobMap.containsKey(key));
+    public CompletionStage<Boolean> exists(String id) {
+        return runAsync(() -> cache.containsKey(id));
     }
 
     @Override
-    public CompletionStage<ScheduledJob> delete(String key) {
-        return runAsync(() -> jobMap.remove(key));
+    public CompletionStage<ScheduledJob> delete(String id) {
+        return runAsync(() -> cache.remove(id));
     }
 
     @Override
     public PublisherBuilder<ScheduledJob> findAll() {
-        return ReactiveStreams.fromIterable(jobMap.values());
+        return ReactiveStreams.fromIterable(cache.values());
     }
 }
