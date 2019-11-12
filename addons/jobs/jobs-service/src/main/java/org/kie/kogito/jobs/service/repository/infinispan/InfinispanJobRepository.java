@@ -16,6 +16,8 @@
 
 package org.kie.kogito.jobs.service.repository.infinispan;
 
+import java.util.Collections;
+import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -73,6 +75,8 @@ public class InfinispanJobRepository extends BaseReactiveJobRepository implement
 
     @Override
     public PublisherBuilder<ScheduledJob> findAll() {
-        return ReactiveStreams.fromIterable(cache.values());
+        return ReactiveStreams
+                .fromIterable(Optional.<Iterable<ScheduledJob>>ofNullable(cache.values())
+                                      .orElse(Collections.emptyList()));
     }
 }
