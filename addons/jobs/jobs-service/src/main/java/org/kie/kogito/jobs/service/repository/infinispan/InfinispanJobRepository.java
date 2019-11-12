@@ -76,7 +76,8 @@ public class InfinispanJobRepository extends BaseReactiveJobRepository implement
     @Override
     public PublisherBuilder<ScheduledJob> findAll() {
         return ReactiveStreams
-                .fromIterable(Optional.<Iterable<ScheduledJob>>ofNullable(cache.values())
+                .fromIterable(Optional.ofNullable(cache)
+                                      .<Iterable<ScheduledJob>>map(RemoteCache::values)
                                       .orElse(Collections.emptyList()));
     }
 }
