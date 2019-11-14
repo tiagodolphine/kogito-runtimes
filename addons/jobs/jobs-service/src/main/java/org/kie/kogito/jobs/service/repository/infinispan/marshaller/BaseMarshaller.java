@@ -18,16 +18,16 @@ package org.kie.kogito.jobs.service.repository.infinispan.marshaller;
 
 import java.io.IOException;
 import java.time.Instant;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Optional;
 
 import org.infinispan.protostream.MessageMarshaller;
+import org.kie.kogito.jobs.service.utils.DateUtil;
 
 public abstract class BaseMarshaller<T> implements MessageMarshaller<T> {
 
-    public String getPackage(){
-        return "job_service";
+    public String getPackage() {
+        return "job.service";
     }
 
     protected Instant zonedDateTimeToInstant(ZonedDateTime dateTime) {
@@ -35,6 +35,8 @@ public abstract class BaseMarshaller<T> implements MessageMarshaller<T> {
     }
 
     protected ZonedDateTime instantToZonedDateTime(Instant instant) throws IOException {
-        return ZonedDateTime.ofInstant(instant, ZoneId.of("UTC"));
+        return Optional.ofNullable(instant)
+                .map(i -> ZonedDateTime.ofInstant(i, DateUtil.DEFAULT_ZONE))
+                .orElse(null);
     }
 }

@@ -16,11 +16,12 @@
 
 package org.kie.kogito.jobs.service.model;
 
+import java.time.ZonedDateTime;
 import java.util.Optional;
-import java.util.StringJoiner;
 
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import org.kie.kogito.jobs.api.Job;
+import org.kie.kogito.jobs.service.utils.DateUtil;
 
 @RegisterForReflection
 public class ScheduledJob {
@@ -29,15 +30,17 @@ public class ScheduledJob {
     private String scheduledId;
     private Integer retries;
     private JobStatus status;
+    private ZonedDateTime lastUpdate;
 
     public ScheduledJob() {
     }
 
-    public ScheduledJob(Job job, String scheduledId, Integer retries, JobStatus status) {
+    public ScheduledJob(Job job, String scheduledId, Integer retries, JobStatus status, ZonedDateTime lastUpdate) {
         this.job = job;
         this.scheduledId = scheduledId;
         this.retries = retries;
         this.status = status;
+        this.lastUpdate = lastUpdate;
     }
 
     public Job getJob() {
@@ -56,17 +59,24 @@ public class ScheduledJob {
         return status;
     }
 
+    public ZonedDateTime getLastUpdate() {
+        return lastUpdate;
+    }
+
     public static ScheduledJobBuilder builder() {
         return new ScheduledJobBuilder();
     }
 
     @Override
     public String toString() {
-        return new StringJoiner(", ", ScheduledJob.class.getSimpleName() + "[", "]")
-                .add("job=" + Optional.ofNullable(job).map(Job::getId).orElse(null))
-                .add("scheduledId='" + scheduledId + "'")
-                .add("retries=" + retries)
-                .toString();
+        final StringBuilder sb = new StringBuilder("ScheduledJob{");
+        sb.append("job=").append(job);
+        sb.append(", scheduledId='").append(scheduledId).append('\'');
+        sb.append(", retries=").append(retries);
+        sb.append(", status=").append(status);
+        sb.append(", lastUpdate=").append(lastUpdate);
+        sb.append('}');
+        return sb.toString();
     }
 
     public static class ScheduledJobBuilder {
@@ -75,6 +85,7 @@ public class ScheduledJob {
         private String scheduledId;
         private Integer retries = 0;
         private JobStatus status;
+        private ZonedDateTime lastUpdate;
 
         public ScheduledJobBuilder job(Job job) {
             this.job = job;
@@ -108,8 +119,17 @@ public class ScheduledJob {
             return this;
         }
 
+        public ScheduledJobBuilder lastUpdate(ZonedDateTime time) {
+            this.lastUpdate = time;
+            return this;
+        }
+
         public ScheduledJob build() {
-            return new ScheduledJob(job, scheduledId, retries, status);
+            return new ScheduledJob(job, scheduledId, retries, status, getLastUpdate());
+        }
+
+        private ZonedDateTime getLastUpdate() {
+            return Optional.ofNullable(lastUpdate).orElseGet(() -> DateUtil.now());
         }
     }
 }

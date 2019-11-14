@@ -17,9 +17,7 @@
 package org.kie.kogito.jobs.service.scheduler;
 
 import java.time.Duration;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -34,7 +32,8 @@ import org.kie.kogito.jobs.service.executor.JobExecutor;
 import org.kie.kogito.jobs.service.model.JobExecutionResponse;
 import org.kie.kogito.jobs.service.model.JobStatus;
 import org.kie.kogito.jobs.service.model.ScheduledJob;
-import org.kie.kogito.jobs.service.repository.infinispan.InfinispanJobRepository;
+import org.kie.kogito.jobs.service.repository.ReactiveJobRepository;
+import org.kie.kogito.jobs.service.utils.DateUtil;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,11 +52,11 @@ public abstract class BaseTimerJobScheduler implements ReactiveJobScheduler<Sche
     private JobExecutor jobExecutor;
 
     @Inject
-    private InfinispanJobRepository jobRepository;
+    private ReactiveJobRepository jobRepository;
 
     @Override
     public Publisher<ScheduledJob> schedule(Job job) {
-        LOGGER.info("1- SCHEDULING {}", job);
+        LOGGER.debug("Scheduling {}", job);
         return ReactiveStreams
                 //1- check if the job is already scheduled
                 .fromCompletionStage(jobRepository.exists(job.getId()))
@@ -93,7 +92,7 @@ public abstract class BaseTimerJobScheduler implements ReactiveJobScheduler<Sche
     }
 
     private Duration calculateDelay(ZonedDateTime expirationTime) {
-        return Duration.between(ZonedDateTime.now(ZoneId.of("UTC")), expirationTime);
+        return Duration.between(DateUtil.now(), expirationTime);
     }
 
     @Override
@@ -189,8 +188,10 @@ public abstract class BaseTimerJobScheduler implements ReactiveJobScheduler<Sche
                         .map(jobRepository::save))
                 .findFirst()
                 .run()
-                .thenCompose(job -> job.orElseThrow(() -> new RuntimeException("Failed to cancel scheduling for " +
-                                                                                       "job " + jobId)));
+                .thenCompose(job -> job.orElseGet(() -> {
+                    LOGGER.error("Failed to cancel scheduling for job {}", jobId);
+                    return null;
+                }));
     }
 
     public abstract Publisher<Boolean> doCancel(ScheduledJob scheduledJob);

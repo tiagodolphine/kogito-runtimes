@@ -35,4 +35,5 @@ public interface ReactiveJobRepository {
     PublisherBuilder<ScheduledJob> findByStatus(JobStatus status);
 
     PublisherBuilder<ScheduledJob> findAll();
+
 }

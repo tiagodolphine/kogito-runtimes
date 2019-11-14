@@ -50,7 +50,7 @@ public class VertxJobScheduler extends BaseTimerJobScheduler {
                 .buildRs();
     }
 
-    private long setTimer(Duration delay, Job job) {
+    private long setTimer(Duration delay, Job job) {vertx.setPeriodic(1000, i->{});
         return vertx.setTimer(delay.toMillis(), scheduledId -> execute(job));
     }
 

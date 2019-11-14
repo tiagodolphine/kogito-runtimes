@@ -17,6 +17,7 @@
 package org.kie.kogito.jobs.service.repository.infinispan.marshaller;
 
 import java.io.IOException;
+import java.time.ZonedDateTime;
 
 import org.kie.kogito.jobs.api.Job;
 import org.kie.kogito.jobs.service.model.JobStatus;
@@ -40,6 +41,8 @@ public class ScheduledJobMarshaller extends BaseMarshaller<ScheduledJob> {
         writer.writeObject("job", scheduledJob.getJob(), Job.class);
         writer.writeInt("retries", scheduledJob.getRetries());
         writer.writeString("status", scheduledJob.getStatus().name());
+        writer.writeInstant("lastUpdate", zonedDateTimeToInstant(scheduledJob.getLastUpdate()));
+
     }
 
     @Override
@@ -48,11 +51,13 @@ public class ScheduledJobMarshaller extends BaseMarshaller<ScheduledJob> {
         Job job = reader.readObject("job", Job.class);
         Integer retries = reader.readInt("retries");
         JobStatus status = JobStatus.valueOf(reader.readString("status"));
+        ZonedDateTime lastUpdate = instantToZonedDateTime(reader.readInstant("lastUpdate"));
         return ScheduledJob.builder()
                 .scheduledId(scheduledId)
                 .retries(retries)
                 .status(status)
                 .job(job)
+                .lastUpdate(lastUpdate)
                 .build();
     }
 }

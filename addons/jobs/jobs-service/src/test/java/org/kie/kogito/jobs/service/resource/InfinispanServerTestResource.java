@@ -19,11 +19,13 @@ package org.kie.kogito.jobs.service.resource;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
 import org.infinispan.commons.dataconversion.MediaType;
 import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
+import org.infinispan.configuration.cache.Index;
 import org.infinispan.configuration.global.GlobalConfiguration;
 import org.infinispan.configuration.global.GlobalConfigurationBuilder;
 import org.infinispan.manager.DefaultCacheManager;
@@ -32,6 +34,7 @@ import org.infinispan.server.core.admin.embeddedserver.EmbeddedServerAdminOperat
 import org.infinispan.server.hotrod.HotRodServer;
 import org.infinispan.server.hotrod.configuration.HotRodServerConfiguration;
 import org.infinispan.server.hotrod.configuration.HotRodServerConfigurationBuilder;
+import org.kie.kogito.jobs.service.repository.infinispan.InfinispanConfiguration;
 
 public class InfinispanServerTestResource implements QuarkusTestResourceLifecycleManager {
 
@@ -48,6 +51,7 @@ public class InfinispanServerTestResource implements QuarkusTestResourceLifecycl
                 .encoding()
                 .value()
                 .mediaType(MediaType.APPLICATION_PROTOSTREAM_TYPE)
+                .indexing().index(Index.PRIMARY_OWNER).addProperty("default.directory_provider", "local-heap")
                 .build();
 
         GlobalConfiguration globalConfig = new GlobalConfigurationBuilder()
@@ -56,8 +60,6 @@ public class InfinispanServerTestResource implements QuarkusTestResourceLifecycl
                 .build();
 
         cacheManager = new DefaultCacheManager(globalConfig, configuration);
-        cacheManager.defineConfiguration("___protobuf_metadata", configuration);
-        cacheManager.defineConfiguration("org.infinispan.DIST_ASYNC", configuration);
 
         hotRodServer = new HotRodServer();
         HotRodServerConfiguration cfg = new HotRodServerConfigurationBuilder()
@@ -68,6 +70,9 @@ public class InfinispanServerTestResource implements QuarkusTestResourceLifecycl
                 .adminOperationsHandler(new EmbeddedServerAdminOperationHandler())
                 .build();
         hotRodServer.start(cfg, cacheManager);
+
+        Stream.of(InfinispanConfiguration.Caches.SCHEDULED_JOBS)
+                .forEach(name -> cacheManager.administration().getOrCreateCache(name, configuration));
 
         return Collections.emptyMap();
     }

@@ -35,6 +35,7 @@ import org.kie.kogito.jobs.api.Job;
 import org.kie.kogito.jobs.api.JobBuilder;
 import org.kie.kogito.jobs.service.model.JobStatus;
 import org.kie.kogito.jobs.service.model.ScheduledJob;
+import org.kie.kogito.jobs.service.utils.DateUtil;
 
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -85,7 +86,7 @@ public class JobResourceTest {
         return JobBuilder
                 .builder()
                 .id(id)
-                .expirationTime(ZonedDateTime.now(ZoneId.of("UTC")).plusSeconds(10))
+                .expirationTime(DateUtil.now().plusSeconds(10))
                 .callbackEndpoint("http://localhost:8081/callback")
                 .priority(1)
                 .build();

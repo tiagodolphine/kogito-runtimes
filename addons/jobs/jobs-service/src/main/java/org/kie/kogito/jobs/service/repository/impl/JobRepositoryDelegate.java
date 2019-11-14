@@ -16,60 +16,68 @@
 
 package org.kie.kogito.jobs.service.repository.impl;
 
-import java.util.Map;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ConcurrentHashMap;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.Any;
+import javax.enterprise.inject.Default;
+import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
 
-import io.vertx.core.Vertx;
 import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
-import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
+import org.kie.kogito.jobs.service.model.JobStatus;
 import org.kie.kogito.jobs.service.model.ScheduledJob;
 import org.kie.kogito.jobs.service.qualifier.Repository;
 import org.kie.kogito.jobs.service.repository.ReactiveJobRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+@Default
 @ApplicationScoped
-@Repository
-public class InMemoryJobRepository extends BaseReactiveJobRepository implements ReactiveJobRepository {
+public class JobRepositoryDelegate implements ReactiveJobRepository {
 
-    private final Map<String, ScheduledJob> jobMap = new ConcurrentHashMap<>();
+    private static final Logger LOGGER = LoggerFactory.getLogger(JobRepositoryDelegate.class);
 
-    public InMemoryJobRepository() {
-        super(null);
+    private ReactiveJobRepository delegate;
+
+    JobRepositoryDelegate() {
     }
 
     @Inject
-    public InMemoryJobRepository(Vertx vertx) {
-        super(vertx);
+    public JobRepositoryDelegate(@Any Instance<ReactiveJobRepository> instances) {
+
+        //instances.stream().forEach(i -> LOGGER.info("repository " + i.getClass()));
+
+        delegate = instances.select(new Repository.Literal(false)).get();
     }
 
     @Override
     public CompletionStage<ScheduledJob> save(ScheduledJob job) {
-        return runAsync(() -> {
-            jobMap.put(job.getJob().getId(), job);
-            return job;
-        });
+        return delegate.save(job);
     }
 
     @Override
-    public CompletionStage<ScheduledJob> get(String key) {
-        return runAsync(() -> jobMap.get(key));
+    public CompletionStage<ScheduledJob> get(String id) {
+        return delegate.get(id);
     }
 
     @Override
-    public CompletionStage<Boolean> exists(String key) {
-        return runAsync(() -> jobMap.containsKey(key));
+    public CompletionStage<Boolean> exists(String id) {
+        return delegate.exists(id);
     }
 
     @Override
-    public CompletionStage<ScheduledJob> delete(String key) {
-        return runAsync(() -> jobMap.remove(key));
+    public CompletionStage<ScheduledJob> delete(String id) {
+        return delegate.delete(id);
+    }
+
+    @Override
+    public PublisherBuilder<ScheduledJob> findByStatus(JobStatus status) {
+        return delegate.findByStatus(status);
     }
 
     @Override
     public PublisherBuilder<ScheduledJob> findAll() {
-        return ReactiveStreams.fromIterable(jobMap.values());
+        return delegate.findAll();
     }
 }

@@ -33,7 +33,7 @@ import javax.ws.rs.core.MediaType;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.kie.kogito.jobs.api.Job;
 import org.kie.kogito.jobs.service.model.ScheduledJob;
-import org.kie.kogito.jobs.service.repository.infinispan.InfinispanJobRepository;
+import org.kie.kogito.jobs.service.repository.ReactiveJobRepository;
 import org.kie.kogito.jobs.service.scheduler.impl.VertxJobScheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,7 +48,7 @@ public class JobResource {
     private VertxJobScheduler scheduler;
 
     @Inject
-    private InfinispanJobRepository reactiveJobRepository;
+    private ReactiveJobRepository jobRepository;
 
     @POST
     @Produces(MediaType.APPLICATION_JSON)
@@ -84,7 +84,7 @@ public class JobResource {
     @Path("/{id}")
     public CompletionStage<ScheduledJob> get(@PathParam("id") String id) {
         LOGGER.debug("REST get {}", id);
-        return reactiveJobRepository
+        return jobRepository
                 .get(id);
     }
 }

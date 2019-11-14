@@ -16,12 +16,20 @@
 
 package org.kie.kogito.jobs.service.repository.infinispan;
 
+import java.util.Optional;
+import java.util.concurrent.CompletionStage;
+
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
+import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
 
 import io.quarkus.runtime.StartupEvent;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.infinispan.client.hotrod.RemoteCacheManager;
+import org.infinispan.configuration.cache.Configuration;
+import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,22 +37,40 @@ import org.slf4j.LoggerFactory;
 public class InfinispanConfiguration {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(InfinispanConfiguration.class);
+    private final Configuration config = new ConfigurationBuilder().build();
 
+    /**
+     * Constants for Caches
+     */
     public static class Caches {
 
         public static final String SCHEDULED_JOBS = "SCHEDULED_JOBS";
+
+        public static String[] ALL() {
+            return new String[]{SCHEDULED_JOBS};
+        }
     }
 
-    private RemoteCacheManager cacheManager;
+    private Optional<RemoteCacheManager> cacheManager;
 
     @Inject
-    public InfinispanConfiguration(RemoteCacheManager cacheManager) {
-        this.cacheManager = cacheManager;
+    public InfinispanConfiguration(Instance<RemoteCacheManager> cacheManagerInstance,
+                                   @ConfigProperty(name = "persistence")
+                                           Optional<String> persistence) {
+
+        LOGGER.info("Persistence config {}", persistence);
+        this.cacheManager = persistence
+                .map(Boolean::valueOf)
+                .filter(Boolean.TRUE::equals)
+                .map(p -> cacheManagerInstance.get());
     }
 
-    void onStart(@Observes StartupEvent ev) {
-        LOGGER.info("Run Infinispan configuration");
-        String template = "org.infinispan.DIST_ASYNC";
-        cacheManager.administration().getOrCreateCache(Caches.SCHEDULED_JOBS, template);
+    CompletionStage<Void> onStart(@Observes StartupEvent startupEvent) {
+        return ReactiveStreams.of(Caches.ALL())
+                .forEach(name -> cacheManager
+                        .map(RemoteCacheManager::administration)
+                        .ifPresent(adm -> adm.getOrCreateCache(name, config)))
+                .run()
+                .thenAccept(c -> LOGGER.info("Executed Infinispan configuration"));
     }
 }

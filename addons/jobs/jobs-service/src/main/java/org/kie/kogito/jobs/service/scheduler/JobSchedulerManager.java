@@ -16,6 +16,7 @@
 
 package org.kie.kogito.jobs.service.scheduler;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 import javax.enterprise.event.Observes;
@@ -25,8 +26,9 @@ import javax.inject.Singleton;
 import io.quarkus.runtime.StartupEvent;
 import org.kie.kogito.jobs.service.model.JobStatus;
 import org.kie.kogito.jobs.service.model.ScheduledJob;
-import org.kie.kogito.jobs.service.repository.infinispan.InfinispanJobRepository;
+import org.kie.kogito.jobs.service.repository.ReactiveJobRepository;
 import org.kie.kogito.jobs.service.scheduler.impl.VertxJobScheduler;
+import org.kie.kogito.jobs.service.utils.ErrorHandling;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,17 +41,23 @@ public class JobSchedulerManager {
     private VertxJobScheduler scheduler;
 
     @Inject
-    private InfinispanJobRepository repository;
+    private ReactiveJobRepository repository;
 
     CompletionStage<Void> onStart(@Observes StartupEvent startupEvent) {
-        LOGGER.info("JobSchedulerManager and scheduled job");
-        return repository.findByStatus(JobStatus.SCHEDULED)
+        LOGGER.info("Loading scheduled jobs");
+        repository.findByStatus(JobStatus.SCHEDULED)
                 .map(ScheduledJob::getJob)
-                .flatMapRsPublisher(scheduler::schedule)
+                //is is necessary to skip error on the publisher to continue processing, otherwise the subscribe
+                // terminated
+                .flatMapRsPublisher(t -> ErrorHandling.skipErrorPublisher(scheduler::schedule, t))
+                .onError(ex -> LOGGER.error("Error loading jobs", ex))
                 .forEach(a -> {
                     LOGGER.info("Loaded and scheduled job {}", a);
                 })
                 .run()
                 .thenAccept(c -> LOGGER.info("Loading scheduled jobs completed !"));
+
+        return CompletableFuture.completedFuture(null);
     }
 }
+

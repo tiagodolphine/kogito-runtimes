@@ -57,8 +57,12 @@
 
     <!-- Persistence -->
     <dependency>
-        <groupId>io.quarkus</groupId>
-        <artifactId>quarkus-infinispan-client</artifactId>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-infinispan-client</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.infinispan</groupId>
+      <artifactId>infinispan-query-dsl</artifactId>
     </dependency>
 
 
@@ -77,10 +81,14 @@
     <dependency>
       <groupId>org.infinispan</groupId>
       <artifactId>infinispan-server-hotrod</artifactId>
-
+      <scope>test</scope>
     </dependency>
 
-
+    <dependency>
+      <groupId>org.infinispan</groupId>
+      <artifactId>infinispan-remote-query-server</artifactId>
+      <scope>test</scope>
+    </dependency>
 
   </dependencies>
   <name>Jobs Service</name>

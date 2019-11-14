@@ -21,7 +21,6 @@ import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 
 import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Typed;
 import javax.inject.Inject;
 
 import io.quarkus.infinispan.client.Remote;
@@ -29,19 +28,24 @@ import io.vertx.core.Vertx;
 import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.infinispan.client.hotrod.RemoteCache;
+import org.infinispan.client.hotrod.Search;
+import org.infinispan.query.dsl.QueryFactory;
+import org.kie.kogito.jobs.service.model.JobStatus;
 import org.kie.kogito.jobs.service.model.ScheduledJob;
+import org.kie.kogito.jobs.service.qualifier.Repository;
 import org.kie.kogito.jobs.service.repository.ReactiveJobRepository;
 import org.kie.kogito.jobs.service.repository.impl.BaseReactiveJobRepository;
 
 import static org.kie.kogito.jobs.service.repository.infinispan.InfinispanConfiguration.Caches.SCHEDULED_JOBS;
 
 @ApplicationScoped
-@Typed(InfinispanJobRepository.class)
+@Repository(persistence = true)
 public class InfinispanJobRepository extends BaseReactiveJobRepository implements ReactiveJobRepository {
 
     private RemoteCache<String, ScheduledJob> cache;
+    private QueryFactory queryFactory;
 
-    public InfinispanJobRepository() {
+    InfinispanJobRepository() {
         super(null);
     }
 
@@ -50,6 +54,7 @@ public class InfinispanJobRepository extends BaseReactiveJobRepository implement
                                    @Remote(SCHEDULED_JOBS) RemoteCache<String, ScheduledJob> cache) {
         super(vertx);
         this.cache = cache;
+        this.queryFactory = Search.getQueryFactory(cache);
     }
 
     @Override
@@ -79,5 +84,14 @@ public class InfinispanJobRepository extends BaseReactiveJobRepository implement
                 .fromIterable(Optional.ofNullable(cache)
                                       .<Iterable<ScheduledJob>>map(RemoteCache::values)
                                       .orElse(Collections.emptyList()));
+    }
+
+    @Override
+    public PublisherBuilder<ScheduledJob> findByStatus(JobStatus status) {
+        return ReactiveStreams.fromIterable(queryFactory.from(ScheduledJob.class)
+                                                    .having("status")
+                                                    .equal(status.name())
+                                                    .build()
+                                                    .list());
     }
 }

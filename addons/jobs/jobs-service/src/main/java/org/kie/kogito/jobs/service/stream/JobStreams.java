@@ -27,6 +27,10 @@ import org.kie.kogito.jobs.service.scheduler.ReactiveJobScheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Class that configure the Consumers for Job Streams,like Job Executed, Job Error... and execute the actions for each
+ * received item.
+ */
 @ApplicationScoped
 public class JobStreams {
 

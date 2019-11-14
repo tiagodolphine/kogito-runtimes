@@ -1,10 +1,11 @@
-package job_service;
+package job.service;
 
 message ScheduledJob {
   optional string scheduledId = 1;
   optional Job job = 2;
   optional int32 retries = 3; // no native Date type available in Protobuf
   required string status = 4;
+  optional int64 lastUpdate = 5;
 }
 
 message Job {
