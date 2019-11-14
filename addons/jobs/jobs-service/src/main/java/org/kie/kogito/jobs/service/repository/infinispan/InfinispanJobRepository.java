@@ -91,6 +91,7 @@ public class InfinispanJobRepository extends BaseReactiveJobRepository implement
         return ReactiveStreams.fromIterable(queryFactory.from(ScheduledJob.class)
                                                     .having("status")
                                                     .equal(status.name())
+                                                    .maxResults(50000)
                                                     .build()
                                                     .list());
     }

@@ -16,7 +16,6 @@
 
 package org.kie.kogito.jobs.service.scheduler;
 
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 import javax.enterprise.event.Observes;
@@ -45,7 +44,7 @@ public class JobSchedulerManager {
 
     CompletionStage<Void> onStart(@Observes StartupEvent startupEvent) {
         LOGGER.info("Loading scheduled jobs");
-        repository.findByStatus(JobStatus.SCHEDULED)
+        return repository.findByStatus(JobStatus.SCHEDULED)
                 .map(ScheduledJob::getJob)
                 //is is necessary to skip error on the publisher to continue processing, otherwise the subscribe
                 // terminated
@@ -56,8 +55,6 @@ public class JobSchedulerManager {
                 })
                 .run()
                 .thenAccept(c -> LOGGER.info("Loading scheduled jobs completed !"));
-
-        return CompletableFuture.completedFuture(null);
     }
 }
 

@@ -16,6 +16,7 @@
 
 package org.kie.kogito.jobs.service.repository.impl;
 
+import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -24,6 +25,7 @@ import javax.enterprise.inject.Default;
 import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
 
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
 import org.kie.kogito.jobs.service.model.JobStatus;
 import org.kie.kogito.jobs.service.model.ScheduledJob;
@@ -44,11 +46,11 @@ public class JobRepositoryDelegate implements ReactiveJobRepository {
     }
 
     @Inject
-    public JobRepositoryDelegate(@Any Instance<ReactiveJobRepository> instances) {
-
-        //instances.stream().forEach(i -> LOGGER.info("repository " + i.getClass()));
-
-        delegate = instances.select(new Repository.Literal(false)).get();
+    public JobRepositoryDelegate(@Any Instance<ReactiveJobRepository> instances,
+                                 @ConfigProperty(name = "persistence")
+                                         Optional<Boolean> persistence) {
+        delegate = instances.select(new Repository.Literal(persistence.orElse(false))).get();
+        LOGGER.info("JobRepository selected {}", delegate.getClass());
     }
 
     @Override

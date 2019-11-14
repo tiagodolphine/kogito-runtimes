@@ -59,7 +59,7 @@ public class HttpJobExecutor implements JobExecutor {
      */
     @Inject
     @Channel(AvailableStreams.JOB_ERROR)
-    @OnOverflow(value = OnOverflow.Strategy.BUFFER, bufferSize = 1000)
+    @OnOverflow(value = OnOverflow.Strategy.BUFFER, bufferSize = 1000000)
     private Emitter<JobExecutionResponse> jobErrorEmitter;
 
     /**
@@ -67,7 +67,7 @@ public class HttpJobExecutor implements JobExecutor {
      */
     @Inject
     @Channel(AvailableStreams.JOB_SUCCESS)
-    @OnOverflow(value = OnOverflow.Strategy.BUFFER, bufferSize = 1000)
+    @OnOverflow(value = OnOverflow.Strategy.BUFFER, bufferSize = 1000000)
     private Emitter<JobExecutionResponse> jobSuccessEmitter;
 
     @PostConstruct
