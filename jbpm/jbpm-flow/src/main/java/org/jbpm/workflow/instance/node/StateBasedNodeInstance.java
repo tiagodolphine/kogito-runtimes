@@ -91,7 +91,7 @@ public abstract class StateBasedNodeInstance extends ExtendedNodeInstanceImpl im
                     getProcessInstance().getKnowledgeRuntime().getProcessRuntime()).getJobsService();
             for (Timer timer : timers.keySet()) {
                 ExpirationTime expirationTime = createTimerInstance(timer);
-                String jobId = jobService.scheduleProcessInstanceJob(ProcessInstanceJobDescription.of(timer.getId(), expirationTime, getProcessInstance().getId(), getProcessInstance().getProcessId(), getProcessInstance().getRootProcessInstanceId(), getProcessInstance().getRootProcessId()));
+                String jobId = jobService.scheduleProcessInstanceJob(ProcessInstanceJobDescription.of(timer.getId(), expirationTime, getProcessInstance().getId(), getProcessInstance().getRootProcessInstanceId(), getProcessInstance().getProcessId(), getProcessInstance().getRootProcessId()));
                 timerInstances.add(jobId);
             }
         }
@@ -211,10 +211,8 @@ public abstract class StateBasedNodeInstance extends ExtendedNodeInstanceImpl im
                         }
                         if (repeatValues.length == 3) {
                             int parsedReapedCount = (int) repeatValues[0];
-                            if (parsedReapedCount > -1) {
-                                //timerInstance.setRepeatLimit(parsedReapedCount + 1);
-                            }
-                            return DurationExpirationTime.repeat(repeatValues[1], repeatValues[2]);
+                            
+                            return DurationExpirationTime.repeat(repeatValues[1], repeatValues[2], parsedReapedCount);
                         } else if (repeatValues.length == 2) {
                             return DurationExpirationTime.repeat(repeatValues[0], repeatValues[1]);
                         } else {

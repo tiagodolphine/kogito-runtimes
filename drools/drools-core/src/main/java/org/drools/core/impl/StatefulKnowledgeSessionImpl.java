@@ -2233,7 +2233,7 @@ public class StatefulKnowledgeSessionImpl extends AbstractRuntime
         }
 
         @Override
-        public JobsService getJobService() {
+        public JobsService getJobsService() {
             throw new UnsupportedOperationException( );
         }
     }

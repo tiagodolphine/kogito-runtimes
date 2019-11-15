@@ -596,7 +596,7 @@ public class CommandBasedStatefulKnowledgeSession extends AbstractRuntime
     }
 
     @Override
-    public JobsService getJobService() {
+    public JobsService getJobsService() {
         return null;
     }
 }

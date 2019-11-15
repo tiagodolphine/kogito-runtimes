@@ -84,7 +84,7 @@ class DummyKnowledgeRuntime implements InternalKnowledgeRuntime {
     }
 
     @Override
-    public JobsService getJobService() {
+    public JobsService getJobsService() {
         return null;
     }
 

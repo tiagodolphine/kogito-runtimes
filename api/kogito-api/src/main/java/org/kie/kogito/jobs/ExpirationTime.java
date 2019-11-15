@@ -6,5 +6,7 @@ public interface ExpirationTime {
 
     ZonedDateTime get();
     
-    Long repeatInterval();       
+    Long repeatInterval();
+    
+    Integer repeatLimit();
 }

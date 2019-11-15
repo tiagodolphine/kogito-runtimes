@@ -16,6 +16,9 @@
 
 package org.jbpm.integrationtests;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
+
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -23,28 +26,21 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 import org.drools.compiler.compiler.DroolsError;
 import org.drools.core.ClockType;
 import org.drools.core.SessionConfiguration;
-import org.drools.core.common.InternalWorkingMemory;
 import org.drools.core.impl.InternalKnowledgeBase;
 import org.drools.core.impl.KnowledgeBaseFactory;
 import org.jbpm.integrationtests.test.Message;
-import org.jbpm.process.instance.InternalProcessRuntime;
 import org.jbpm.process.instance.ProcessInstance;
 import org.jbpm.process.instance.impl.demo.DoNothingWorkItemHandler;
 import org.jbpm.test.util.AbstractBaseTest;
 import org.junit.jupiter.api.Test;
 import org.kie.api.runtime.KieSession;
 import org.kie.api.runtime.conf.ClockTypeOption;
-import org.kie.api.time.SessionPseudoClock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
 
 public class ProcessTimerTest extends AbstractBaseTest {
     
@@ -593,10 +589,6 @@ public class ProcessTimerTest extends AbstractBaseTest {
 		    session = kbase.newKieSession(conf, null);
 		}
 		
-        SessionPseudoClock clock = ( SessionPseudoClock) session.getSessionClock();
-        clock.advanceTime( 300,
-                           TimeUnit.MILLISECONDS ); 
-        
 		List<String> myList = new ArrayList<String>();
 		session.setGlobal("myList", myList);
 		
@@ -604,19 +596,14 @@ public class ProcessTimerTest extends AbstractBaseTest {
         assertEquals(0, myList.size());
         assertEquals(ProcessInstance.STATE_ACTIVE, processInstance.getState());
         
-        clock = ( SessionPseudoClock) session.getSessionClock();
-        clock.advanceTime( 500,
-                           TimeUnit.MILLISECONDS ); 
         try {
-            Thread.sleep(600);
+            Thread.sleep(300);
         } catch (InterruptedException e) {
             // do nothing
         }
         assertEquals(1, myList.size());
         assertEquals("Executing timer2", myList.get(0));
 
-        clock.advanceTime( 500,
-                           TimeUnit.MILLISECONDS ); 
         try {
             Thread.sleep(600);
         } catch (InterruptedException e) {

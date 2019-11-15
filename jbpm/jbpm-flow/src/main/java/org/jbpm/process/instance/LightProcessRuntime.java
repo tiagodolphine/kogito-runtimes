@@ -92,7 +92,7 @@ public class LightProcessRuntime implements InternalProcessRuntime {
         this.runtimeContext = runtimeContext;
         this.processInstanceManager = services.getProcessInstanceManager();
         this.signalManager = services.getSignalManager();
-        this.jobService = new InMemoryJobService(this);
+        this.jobService = services.getJobsService() == null ? new InMemoryJobService(this) : services.getJobsService();
         this.processEventSupport = services.getEventSupport();
         this.workItemManager = services.getWorkItemManager();
         this.unitOfWorkManager = services.getUnitOfWorkManager();

@@ -63,7 +63,7 @@ public class TimerNodeInstance extends StateBasedNodeInstance implements EventLi
         }
         JobsService jobService = ((InternalProcessRuntime)
                 getProcessInstance().getKnowledgeRuntime().getProcessRuntime()).getJobsService();
-        timerId = jobService.scheduleProcessInstanceJob(ProcessInstanceJobDescription.of(getTimerNode().getTimer().getId(), expirationTime, getProcessInstance().getId(), getProcessInstance().getProcessId(), getProcessInstance().getRootProcessInstanceId(), getProcessInstance().getRootProcessId()));
+        timerId = jobService.scheduleProcessInstanceJob(ProcessInstanceJobDescription.of(getTimerNode().getTimer().getId(), expirationTime, getProcessInstance().getId(), getProcessInstance().getRootProcessInstanceId(), getProcessInstance().getProcessId(), getProcessInstance().getRootProcessId()));
         
         oneTimeTimer = expirationTime.repeatInterval() == null;
     }
@@ -73,7 +73,7 @@ public class TimerNodeInstance extends StateBasedNodeInstance implements EventLi
     	if ("timerTriggered".equals(type)) {
     		TimerInstance timer = (TimerInstance) event;
             if (timer.getId().equals(timerId)) {
-                triggerCompleted(oneTimeTimer);
+                triggerCompleted(oneTimeTimer || timer.getRepeatLimit() == 0);
             }
     	}
     }

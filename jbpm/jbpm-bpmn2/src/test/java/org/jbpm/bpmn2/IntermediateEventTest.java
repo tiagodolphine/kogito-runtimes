@@ -1971,70 +1971,7 @@ public class IntermediateEventTest extends JbpmBpmn2TestCase {
         assertProcessInstanceFinished(processInstance, ksession);
     }
 
-    @Test
-    @Timeout(10)
-    public void testIntermediateCatchEventTimerCycleCron() throws Exception {
-        NodeLeftCountDownProcessEventListener countDownListener = new NodeLeftCountDownProcessEventListener("timer", 3);
-        KieBase kbase = createKnowledgeBase("BPMN2-IntermediateCatchEventTimerCycleCron.bpmn2");
-        ksession = createKnowledgeSession(kbase);
-        ksession.addEventListener(countDownListener);
-
-        ProcessInstance processInstance = ksession.startProcess("IntermediateCatchEvent");
-        assertProcessInstanceActive(processInstance);
-
-        countDownListener.waitTillCompleted();
-        assertProcessInstanceActive(processInstance);
-
-        ksession.abortProcessInstance(processInstance.getId());
-        assertProcessInstanceFinished(processInstance, ksession);
-    }
-
-    @Test
-    @Timeout(10)
-    public void testIntermediateCatchEventTimerDurationValueFromGlobal() throws Exception {
-        NodeLeftCountDownProcessEventListener countDownListener = new NodeLeftCountDownProcessEventListener("timer", 1);
-        KieBase kbase = createKnowledgeBase("BPMN2-GlobalTimerInterrupted.bpmn2");
-        ksession = createKnowledgeSession(kbase);
-        ksession.addEventListener(countDownListener);
-        ksession.setGlobal("time", "2s");
-
-        ProcessInstance processInstance = ksession.startProcess("interruptedTimer");
-
-        assertProcessInstanceActive(processInstance);
-        // now wait for 1 second for timer to trigger
-        countDownListener.waitTillCompleted();
-
-        assertProcessInstanceFinished(processInstance, ksession);
-
-    }
-
-    @Test
-    @Timeout(10)
-    public void testTimerBoundaryEventCronCycle() throws Exception {
-        NodeLeftCountDownProcessEventListener countDownListener = new NodeLeftCountDownProcessEventListener("Send Update Timer", 3);
-        KieBase kbase = createKnowledgeBase("BPMN2-BoundaryTimerCycleCron.bpmn2");
-        ksession = createKnowledgeSession(kbase);
-        ksession.addEventListener(countDownListener);
-        TestWorkItemHandler handler = new TestWorkItemHandler();
-
-        ksession.getWorkItemManager().registerWorkItemHandler("Human Task", handler);
-        ProcessInstance processInstance = ksession.startProcess("boundaryTimerCycleCron");
-        assertProcessInstanceActive(processInstance);
-
-        List<WorkItem> workItems = handler.getWorkItems();
-        assertThat(workItems).isNotNull();
-        assertThat(workItems.size()).isEqualTo(1);
-
-        countDownListener.waitTillCompleted();
-        assertProcessInstanceActive(processInstance);
-        workItems = handler.getWorkItems();
-        assertThat(workItems).isNotNull();
-        assertThat(workItems.size()).isEqualTo(3);
-
-        ksession.abortProcessInstance(processInstance.getId());
-
-        assertProcessInstanceFinished(processInstance, ksession);
-    }
+   
 
     @Test
     @Timeout(10)
@@ -2368,70 +2305,7 @@ public class IntermediateEventTest extends JbpmBpmn2TestCase {
         assertThat(processInstances.size()).isEqualTo(0);
     }
 
-    @Test
-    @Timeout(10)
-    public void testTimerBoundaryEventCronCycleVariable() throws Exception {
-        NodeLeftCountDownProcessEventListener countDownListener = new NodeLeftCountDownProcessEventListener("Send Update Timer", 3);
-        KieBase kbase = createKnowledgeBase("BPMN2-BoundaryTimerCycleCronVariable.bpmn2");
-        ksession = createKnowledgeSession(kbase);
-        ksession.addEventListener(countDownListener);
-        TestWorkItemHandler handler = new TestWorkItemHandler();
-
-        ksession.getWorkItemManager().registerWorkItemHandler("Human Task", handler);
-
-        Map<String, Object> parameters = new HashMap<String, Object>();
-        parameters.put("cronStr", "0/1 * * * * ?");
-
-        ProcessInstance processInstance = ksession.startProcess("boundaryTimerCycleCron", parameters);
-        assertProcessInstanceActive(processInstance);
-
-        List<WorkItem> workItems = handler.getWorkItems();
-        assertThat(workItems).isNotNull();
-        assertThat(workItems.size()).isEqualTo(1);
-
-        countDownListener.waitTillCompleted();
-        assertProcessInstanceActive(processInstance);
-        workItems = handler.getWorkItems();
-        assertThat(workItems).isNotNull();
-        assertThat(workItems.size()).isEqualTo(3);
-
-        ksession.abortProcessInstance(processInstance.getId());
-
-        assertProcessInstanceFinished(processInstance, ksession);
-    }
-
-    @Test
-    @Timeout(10)
-    public void testMultipleTimerBoundaryEventCronCycleVariable() throws Exception {
-        NodeLeftCountDownProcessEventListener countDownListener = new NodeLeftCountDownProcessEventListener("Send Update Timer", 2);
-        KieBase kbase = createKnowledgeBase("BPMN2-MultipleBoundaryTimerCycleCronVariable.bpmn2");
-        ksession = createKnowledgeSession(kbase);
-        ksession.addEventListener(countDownListener);
-        TestWorkItemHandler handler = new TestWorkItemHandler();
-
-        ksession.getWorkItemManager().registerWorkItemHandler("Human Task", handler);
-
-        Map<String, Object> parameters = new HashMap<String, Object>();
-        parameters.put("cronStr", "0/1 * * * * ?");
-
-        ProcessInstance processInstance = ksession.startProcess("boundaryTimerCycleCron", parameters);
-        assertProcessInstanceActive(processInstance);
-
-        List<WorkItem> workItems = handler.getWorkItems();
-        assertThat(workItems).isNotNull();
-        assertThat(workItems.size()).isEqualTo(1);
-
-        countDownListener.waitTillCompleted();
-        assertProcessInstanceActive(processInstance);
-
-        workItems = handler.getWorkItems();
-        assertThat(workItems).isNotNull();
-        assertThat(workItems.size()).isEqualTo(2);
-
-        ksession.abortProcessInstance(processInstance.getId());
-
-        assertProcessInstanceFinished(processInstance, ksession);
-    }
+    
 
     @Test
     @Timeout(10)

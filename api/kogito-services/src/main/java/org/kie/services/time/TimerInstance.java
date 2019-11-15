@@ -133,10 +133,11 @@ public class TimerInstance implements Serializable{
                + "]";
     }
     
-    public static TimerInstance with(long timerId, String id) {
+    public static TimerInstance with(long timerId, String id, Integer limit) {
         TimerInstance timerInstance = new TimerInstance();
         timerInstance.setId(id);
         timerInstance.setTimerId(timerId);
+        timerInstance.setRepeatLimit(limit);
         
         return timerInstance;
     }

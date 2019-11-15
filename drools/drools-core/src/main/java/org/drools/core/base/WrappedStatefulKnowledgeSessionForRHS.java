@@ -781,13 +781,12 @@ public final class WrappedStatefulKnowledgeSessionForRHS
         return delegate.getSessionClock();
     }
 
-<<<<<<< HEAD
     public Application getApplication() {
         return delegate.getApplication();
-=======
+    }
+    
     @Override
     public JobsService getJobsService() {
         return delegate.getJobsService();
->>>>>>> further work on timer service
     }
 }

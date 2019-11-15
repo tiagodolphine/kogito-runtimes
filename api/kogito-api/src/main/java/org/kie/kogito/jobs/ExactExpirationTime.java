@@ -8,7 +8,6 @@ public class ExactExpirationTime implements ExpirationTime {
 
     private final ZonedDateTime expirationTime;
     
-    
     private ExactExpirationTime(ZonedDateTime expirationTime) {
         this.expirationTime = Objects.requireNonNull(expirationTime);
     }
@@ -22,7 +21,11 @@ public class ExactExpirationTime implements ExpirationTime {
     public Long repeatInterval() {     
         return null;
     }
-
+    
+    @Override
+    public Integer repeatLimit() {
+        return null;
+    }
     
     public static ExactExpirationTime of(ZonedDateTime expirationTime) {
         return new ExactExpirationTime(expirationTime);

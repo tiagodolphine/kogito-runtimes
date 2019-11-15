@@ -26,6 +26,7 @@ import org.jbpm.process.instance.InternalProcessRuntime;
 import org.jbpm.process.instance.ProcessRuntimeFactoryServiceImpl;
 import org.jbpm.ruleflow.instance.RuleFlowProcessInstance;
 import org.jbpm.test.util.AbstractBaseTest;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.kie.api.KieBase;
 import org.kie.api.runtime.KieSession;
@@ -50,7 +51,7 @@ public class TimerTest extends AbstractBaseTest  {
     }
     
     @Test
-//    @Disabled
+    @Disabled
 	public void testTimer() {
         KieBase kbase = KnowledgeBaseFactory.newKnowledgeBase();
         final KieSession workingMemory = kbase.newKieSession();

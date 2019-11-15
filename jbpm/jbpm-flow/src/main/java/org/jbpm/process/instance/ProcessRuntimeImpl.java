@@ -567,10 +567,8 @@ public class ProcessRuntimeImpl implements InternalProcessRuntime {
             long[] repeatValues = DateTimeUtils.parseRepeatableDateTime(timer.getDelay());
             if (repeatValues.length == 3) {
                 int parsedReapedCount = (int)repeatValues[0];
-                if (parsedReapedCount > -1) {
-//                    timerInstance.setRepeatLimit(parsedReapedCount+1);
-                }
-                return DurationExpirationTime.repeat(repeatValues[1], repeatValues[2]);
+                
+                return DurationExpirationTime.repeat(repeatValues[1], repeatValues[2], parsedReapedCount);
             } else {
                 long delay = repeatValues[0];
                 long period = -1;

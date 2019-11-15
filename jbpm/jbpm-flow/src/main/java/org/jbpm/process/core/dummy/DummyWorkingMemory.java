@@ -742,7 +742,7 @@ public class DummyWorkingMemory implements InternalWorkingMemory,
     }
 
     @Override
-    public JobsService getJobService() {
+    public JobsService getJobsService() {
         return null;
     }
 }
