@@ -82,7 +82,17 @@ public class JobResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/{id}")
-    public CompletionStage<ScheduledJob> get(@PathParam("id") String id) {
+    public CompletionStage<Job> get(@PathParam("id") String id) {
+        LOGGER.debug("REST get {}", id);
+        return jobRepository
+                .get(id)
+                .thenApply(ScheduledJob::getJob);
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/scheduled/{id}")
+    public CompletionStage<ScheduledJob> getScheduledJob(@PathParam("id") String id) {
         LOGGER.debug("REST get {}", id);
         return jobRepository
                 .get(id);

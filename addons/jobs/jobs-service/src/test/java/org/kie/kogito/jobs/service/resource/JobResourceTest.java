@@ -51,12 +51,7 @@ public class JobResourceTest {
     }
 
     @Inject
-    ObjectMapper objectMapper;
-
-    @BeforeAll
-    public void setup() {
-        // objectMapper = new ObjectMapper();
-    }
+    private ObjectMapper objectMapper;
 
     @Test
     void create() throws Exception {
@@ -82,7 +77,7 @@ public class JobResourceTest {
         return objectMapper.writeValueAsString(job);
     }
 
-    private Job getJob(String id) throws JsonProcessingException {
+    private Job getJob(String id) {
         return JobBuilder
                 .builder()
                 .id(id)
@@ -113,7 +108,7 @@ public class JobResourceTest {
         final String id = "3";
         final Job job = getJob(id);
         create(jobToJson(job));
-        final ScheduledJob scheduledJob = given()
+        final Job scheduledJob = given()
                 .pathParam("id", id)
                 .when()
                 .get("/job/{id}")
@@ -122,11 +117,9 @@ public class JobResourceTest {
                 .contentType(ContentType.JSON)
                 .assertThat()
                 .extract()
-                .as(ScheduledJob.class);
-        assertEquals(scheduledJob.getJob(), job);
-        assertEquals(scheduledJob.getRetries(), 0);
-        assertEquals(scheduledJob.getStatus(), JobStatus.SCHEDULED);
-        assertNotNull(scheduledJob.getScheduledId());
+                .as(Job.class);
+        assertEquals(scheduledJob, job);
+
     }
 
     @Test
@@ -137,7 +130,7 @@ public class JobResourceTest {
         final ScheduledJob scheduledJob = given()
                 .pathParam("id", id)
                 .when()
-                .get("/job/{id}")
+                .get("/job/scheduled/{id}")
                 .then()
                 .statusCode(200)
                 .contentType(ContentType.JSON)
