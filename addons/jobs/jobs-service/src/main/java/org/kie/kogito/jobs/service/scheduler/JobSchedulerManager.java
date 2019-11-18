@@ -37,10 +37,10 @@ public class JobSchedulerManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(JobSchedulerManager.class);
 
     @Inject
-    private VertxJobScheduler scheduler;
+    VertxJobScheduler scheduler;
 
     @Inject
-    private ReactiveJobRepository repository;
+    ReactiveJobRepository repository;
 
     CompletionStage<Void> onStart(@Observes StartupEvent startupEvent) {
         LOGGER.info("Loading scheduled jobs");

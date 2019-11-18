@@ -47,12 +47,12 @@ public class HttpJobExecutor implements JobExecutor {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpJobExecutor.class);
 
     @Inject
-    private Vertx vertx;
+    Vertx vertx;
 
     private WebClient client;
 
     @Inject
-    private HttpConverters httpConverters;
+    HttpConverters httpConverters;
 
     /**
      * Publish on Stream of Job Error events
@@ -60,7 +60,7 @@ public class HttpJobExecutor implements JobExecutor {
     @Inject
     @Channel(AvailableStreams.JOB_ERROR)
     @OnOverflow(value = OnOverflow.Strategy.BUFFER, bufferSize = 10000)
-    private Emitter<JobExecutionResponse> jobErrorEmitter;
+    Emitter<JobExecutionResponse> jobErrorEmitter;
 
     /**
      * Publish on Stream of Job Success events
@@ -68,7 +68,7 @@ public class HttpJobExecutor implements JobExecutor {
     @Inject
     @Channel(AvailableStreams.JOB_SUCCESS)
     @OnOverflow(value = OnOverflow.Strategy.BUFFER, bufferSize = 10000)
-    private Emitter<JobExecutionResponse> jobSuccessEmitter;
+    Emitter<JobExecutionResponse> jobSuccessEmitter;
 
     @PostConstruct
     void initialize() {

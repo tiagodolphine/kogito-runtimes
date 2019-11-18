@@ -19,11 +19,9 @@ package org.kie.kogito.jobs.service.model;
 import java.time.ZonedDateTime;
 import java.util.Optional;
 
-import io.quarkus.runtime.annotations.RegisterForReflection;
 import org.kie.kogito.jobs.api.Job;
 import org.kie.kogito.jobs.service.utils.DateUtil;
 
-@RegisterForReflection
 public class ScheduledJob {
 
     private Job job;

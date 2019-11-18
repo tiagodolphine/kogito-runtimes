@@ -21,10 +21,10 @@ import java.time.ZonedDateTime;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.kie.kogito.jobs.api.Job;
@@ -45,14 +45,18 @@ import org.slf4j.LoggerFactory;
 public abstract class BaseTimerJobScheduler implements ReactiveJobScheduler<ScheduledJob> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BaseTimerJobScheduler.class);
-    public static final long BACKOFF_RETRY_MILLIS = TimeUnit.SECONDS.toMillis(1);
-    public static final long MAX_INTERVAL_LIMIT_TO_RETRY_MILLIS = TimeUnit.SECONDS.toMillis(60);
+
+    @ConfigProperty(name = "kogito.job-service.backoffRetryMillis", defaultValue = "1000")
+    long backoffRetryMillis;
+
+    @ConfigProperty(name = "kogito.job-service.maxIntervalLimitToRetryMillis", defaultValue = "60000")
+    long maxIntervalLimitToRetryMillis;
 
     @Inject
-    private JobExecutor jobExecutor;
+    JobExecutor jobExecutor;
 
     @Inject
-    private ReactiveJobRepository jobRepository;
+    ReactiveJobRepository jobRepository;
 
     @Override
     public Publisher<ScheduledJob> schedule(Job job) {
@@ -109,7 +113,7 @@ public abstract class BaseTimerJobScheduler implements ReactiveJobScheduler<Sche
     }
 
     private boolean isExpired(ZonedDateTime expirationTime) {
-        final Duration limit = Duration.ofMillis(MAX_INTERVAL_LIMIT_TO_RETRY_MILLIS);
+        final Duration limit = Duration.ofMillis(maxIntervalLimitToRetryMillis);
         return !(calculateDelay(expirationTime).plus(limit).isNegative());
     }
 
@@ -123,8 +127,8 @@ public abstract class BaseTimerJobScheduler implements ReactiveJobScheduler<Sche
     }
 
     /**
-     * Retries to schedule the job execution with a backoff time of {@link BaseTimerJobScheduler#BACKOFF_RETRY_MILLIS}
-     * between retries and a limit of max interval of {@link BaseTimerJobScheduler#MAX_INTERVAL_LIMIT_TO_RETRY_MILLIS}
+     * Retries to schedule the job execution with a backoff time of {@link BaseTimerJobScheduler#backoffRetryMillis}
+     * between retries and a limit of max interval of {@link BaseTimerJobScheduler#maxIntervalLimitToRetryMillis}
      * to retry, after this interval it the job it the job is not successfully executed it will remain in error
      * state, with no more retries.
      * @param errorResponse
@@ -142,7 +146,7 @@ public abstract class BaseTimerJobScheduler implements ReactiveJobScheduler<Sche
                 .flatMap(scheduledJob -> handleExpirationTime(scheduledJob)
                         .map(ScheduledJob::getStatus)
                         .filter(JobStatus.ERROR::equals)
-                        .map(time -> doSchedule(Duration.ofMillis(BACKOFF_RETRY_MILLIS), scheduledJob.getJob()))
+                        .map(time -> doSchedule(Duration.ofMillis(backoffRetryMillis), scheduledJob.getJob()))
                         .flatMapRsPublisher(p -> p)
                         .map(scheduleId -> ScheduledJob
                                 .builder()

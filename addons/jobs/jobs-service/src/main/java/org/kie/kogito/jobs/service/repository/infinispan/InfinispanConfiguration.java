@@ -37,6 +37,7 @@ import org.slf4j.LoggerFactory;
 public class InfinispanConfiguration {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(InfinispanConfiguration.class);
+    public static final String PERSISTENCE_CONFIG_KEY = "kogito.job-service.persistence";
     private final Configuration config = new ConfigurationBuilder().build();
 
     /**
@@ -55,7 +56,7 @@ public class InfinispanConfiguration {
 
     @Inject
     public InfinispanConfiguration(Instance<RemoteCacheManager> cacheManagerInstance,
-                                   @ConfigProperty(name = "persistence")
+                                   @ConfigProperty(name = PERSISTENCE_CONFIG_KEY)
                                            Optional<Boolean> persistence) {
 
         LOGGER.info("Persistence config {}", persistence);

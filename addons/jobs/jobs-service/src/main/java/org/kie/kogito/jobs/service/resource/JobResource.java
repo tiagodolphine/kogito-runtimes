@@ -45,10 +45,10 @@ public class JobResource {
     private static final Logger LOGGER = LoggerFactory.getLogger(JobResource.class);
 
     @Inject
-    private VertxJobScheduler scheduler;
+    VertxJobScheduler scheduler;
 
     @Inject
-    private ReactiveJobRepository jobRepository;
+    ReactiveJobRepository jobRepository;
 
     @POST
     @Produces(MediaType.APPLICATION_JSON)

@@ -31,6 +31,7 @@ import org.kie.kogito.jobs.service.model.JobStatus;
 import org.kie.kogito.jobs.service.model.ScheduledJob;
 import org.kie.kogito.jobs.service.qualifier.Repository;
 import org.kie.kogito.jobs.service.repository.ReactiveJobRepository;
+import org.kie.kogito.jobs.service.repository.infinispan.InfinispanConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,7 +48,7 @@ public class JobRepositoryDelegate implements ReactiveJobRepository {
 
     @Inject
     public JobRepositoryDelegate(@Any Instance<ReactiveJobRepository> instances,
-                                 @ConfigProperty(name = "persistence")
+                                 @ConfigProperty(name = InfinispanConfiguration.PERSISTENCE_CONFIG_KEY)
                                          Optional<Boolean> persistence) {
         delegate = instances.select(new Repository.Literal(persistence.orElse(false))).get();
         LOGGER.info("JobRepository selected {}", delegate.getClass());

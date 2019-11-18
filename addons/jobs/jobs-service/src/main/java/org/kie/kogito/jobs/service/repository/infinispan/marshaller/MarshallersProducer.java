@@ -33,9 +33,4 @@ public class MarshallersProducer {
     public MessageMarshaller jobMarshaller() {
         return new JobMarshaller();
     }
-
-//    @Produces
-//    public EnumMarshaller statusMarshaller() {
-//        return new StatusMarshaller();
-//    }
 }
