@@ -57,11 +57,11 @@ public class InfinispanConfiguration {
     @Inject
     public InfinispanConfiguration(Instance<RemoteCacheManager> cacheManagerInstance,
                                    @ConfigProperty(name = PERSISTENCE_CONFIG_KEY)
-                                           Optional<Boolean> persistence) {
+                                           Optional<String> persistence) {
 
         LOGGER.info("Persistence config {}", persistence);
         this.cacheManager = persistence
-                .filter(Boolean.TRUE::equals)
+                .filter("infinispan"::equals)
                 .map(p -> cacheManagerInstance.get());
     }
 

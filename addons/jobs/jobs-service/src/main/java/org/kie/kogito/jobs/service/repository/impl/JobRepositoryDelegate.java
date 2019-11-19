@@ -49,8 +49,8 @@ public class JobRepositoryDelegate implements ReactiveJobRepository {
     @Inject
     public JobRepositoryDelegate(@Any Instance<ReactiveJobRepository> instances,
                                  @ConfigProperty(name = InfinispanConfiguration.PERSISTENCE_CONFIG_KEY)
-                                         Optional<Boolean> persistence) {
-        delegate = instances.select(new Repository.Literal(persistence.orElse(false))).get();
+                                         Optional<String> persistence) {
+        delegate = instances.select(new Repository.Literal(persistence.orElse("in-memory"))).get();
         LOGGER.info("JobRepository selected {}", delegate.getClass());
     }
 
@@ -75,7 +75,7 @@ public class JobRepositoryDelegate implements ReactiveJobRepository {
     }
 
     @Override
-    public PublisherBuilder<ScheduledJob> findByStatus(JobStatus status) {
+    public PublisherBuilder<ScheduledJob> findByStatus(JobStatus... status) {
         return delegate.findByStatus(status);
     }
 

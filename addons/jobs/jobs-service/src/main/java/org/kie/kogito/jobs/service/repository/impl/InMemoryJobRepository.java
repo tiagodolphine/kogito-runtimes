@@ -31,7 +31,7 @@ import org.kie.kogito.jobs.service.qualifier.Repository;
 import org.kie.kogito.jobs.service.repository.ReactiveJobRepository;
 
 @ApplicationScoped
-@Repository
+@Repository("in-memory")
 public class InMemoryJobRepository extends BaseReactiveJobRepository implements ReactiveJobRepository {
 
     private final Map<String, ScheduledJob> jobMap = new ConcurrentHashMap<>();

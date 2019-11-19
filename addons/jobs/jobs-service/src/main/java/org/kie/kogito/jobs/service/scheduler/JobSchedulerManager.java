@@ -42,9 +42,9 @@ public class JobSchedulerManager {
     @Inject
     ReactiveJobRepository repository;
 
-    CompletionStage<Void> onStart(@Observes StartupEvent startupEvent) {
+    CompletionStage<Void> loadScheduledJobs(@Observes StartupEvent startupEvent) {
         LOGGER.info("Loading scheduled jobs");
-        return repository.findByStatus(JobStatus.SCHEDULED)
+        return repository.findByStatus(JobStatus.SCHEDULED, JobStatus.RETRY)
                 .map(ScheduledJob::getJob)
                 //is is necessary to skip error on the publisher to continue processing, otherwise the subscribe
                 // terminated

@@ -16,16 +16,14 @@
 
 package org.kie.kogito.jobs.service.repository.impl;
 
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
 
-import io.reactivex.Emitter;
-import io.reactivex.Flowable;
 import io.vertx.core.Vertx;
 import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
-import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.kie.kogito.jobs.service.model.JobStatus;
 import org.kie.kogito.jobs.service.model.ScheduledJob;
 import org.kie.kogito.jobs.service.repository.ReactiveJobRepository;
@@ -45,8 +43,9 @@ public abstract class BaseReactiveJobRepository implements ReactiveJobRepository
     }
 
     @Override
-    public PublisherBuilder<ScheduledJob> findByStatus(JobStatus status) {
+    public PublisherBuilder<ScheduledJob> findByStatus(JobStatus... status) {
         return findAll()
-                .filter(job -> Objects.equals(status, job.getStatus()));
+                .filter(job -> Objects.nonNull(job.getStatus()))
+                .filter(job -> Arrays.stream(status).anyMatch(job.getStatus()::equals));
     }
 }

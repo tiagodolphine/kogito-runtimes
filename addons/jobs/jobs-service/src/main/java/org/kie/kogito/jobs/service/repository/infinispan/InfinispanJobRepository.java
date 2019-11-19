@@ -16,9 +16,11 @@
 
 package org.kie.kogito.jobs.service.repository.infinispan;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
+import java.util.stream.Collectors;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -27,6 +29,7 @@ import io.quarkus.infinispan.client.Remote;
 import io.vertx.core.Vertx;
 import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
+import org.infinispan.client.hotrod.Flag;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.client.hotrod.Search;
 import org.infinispan.query.dsl.QueryFactory;
@@ -39,7 +42,7 @@ import org.kie.kogito.jobs.service.repository.impl.BaseReactiveJobRepository;
 import static org.kie.kogito.jobs.service.repository.infinispan.InfinispanConfiguration.Caches.SCHEDULED_JOBS;
 
 @ApplicationScoped
-@Repository(persistence = true)
+@Repository("infinispan")
 public class InfinispanJobRepository extends BaseReactiveJobRepository implements ReactiveJobRepository {
 
     private RemoteCache<String, ScheduledJob> cache;
@@ -75,7 +78,9 @@ public class InfinispanJobRepository extends BaseReactiveJobRepository implement
 
     @Override
     public CompletionStage<ScheduledJob> delete(String id) {
-        return runAsync(() -> cache.remove(id));
+        return runAsync(() -> cache
+                .withFlags(Flag.FORCE_RETURN_VALUE)
+                .remove(id));
     }
 
     @Override
@@ -87,10 +92,12 @@ public class InfinispanJobRepository extends BaseReactiveJobRepository implement
     }
 
     @Override
-    public PublisherBuilder<ScheduledJob> findByStatus(JobStatus status) {
+    public PublisherBuilder<ScheduledJob> findByStatus(JobStatus... status) {
         return ReactiveStreams.fromIterable(queryFactory.from(ScheduledJob.class)
                                                     .having("status")
-                                                    .equal(status.name())
+                                                    .in(Arrays.stream(status)
+                                                                .map(JobStatus::name)
+                                                                .collect(Collectors.toList()))
                                                     .maxResults(50000)
                                                     .build()
                                                     .list());

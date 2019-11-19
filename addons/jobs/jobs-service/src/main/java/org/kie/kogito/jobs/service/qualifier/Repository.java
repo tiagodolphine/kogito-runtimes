@@ -33,21 +33,19 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Target({TYPE, METHOD, FIELD, PARAMETER})
 public @interface Repository {
 
-    boolean persistence() default false;
+    String value();
 
     final class Literal extends AnnotationLiteral<Repository> implements Repository {
 
-        private static final long serialVersionUID = 1L;
+        private String value;
 
-        private boolean persistence;
-
-        public Literal(boolean persistence) {
-            this.persistence = persistence;
+        public Literal(String value) {
+            this.value = value;
         }
 
         @Override
-        public boolean persistence() {
-            return persistence;
+        public String value() {
+            return value;
         }
     }
 }

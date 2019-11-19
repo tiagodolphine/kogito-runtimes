@@ -17,10 +17,9 @@
 package org.kie.kogito.jobs.service.model;
 
 public enum JobStatus {
-    ERROR,
-    EXPIRED,
-    EXECUTED,
-    SCHEDULED,
-    RETRY,
-    CANCELED
+    ERROR,//final
+    EXECUTED,//final
+    SCHEDULED,//active
+    RETRY,//active
+    CANCELED//final
 }

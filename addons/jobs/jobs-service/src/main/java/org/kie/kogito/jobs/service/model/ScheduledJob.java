@@ -29,16 +29,19 @@ public class ScheduledJob {
     private Integer retries;
     private JobStatus status;
     private ZonedDateTime lastUpdate;
+    private JobExecutionResponse executionResponse;
 
     public ScheduledJob() {
     }
 
-    public ScheduledJob(Job job, String scheduledId, Integer retries, JobStatus status, ZonedDateTime lastUpdate) {
+    public ScheduledJob(Job job, String scheduledId, Integer retries, JobStatus status, ZonedDateTime lastUpdate,
+                        JobExecutionResponse executionResponse) {
         this.job = job;
         this.scheduledId = scheduledId;
         this.retries = retries;
         this.status = status;
         this.lastUpdate = lastUpdate;
+        this.executionResponse = executionResponse;
     }
 
     public Job getJob() {
@@ -59,6 +62,10 @@ public class ScheduledJob {
 
     public ZonedDateTime getLastUpdate() {
         return lastUpdate;
+    }
+
+    public JobExecutionResponse getExecutionResponse() {
+        return executionResponse;
     }
 
     public static ScheduledJobBuilder builder() {
@@ -84,6 +91,7 @@ public class ScheduledJob {
         private Integer retries = 0;
         private JobStatus status;
         private ZonedDateTime lastUpdate;
+        private JobExecutionResponse executionResponse;
 
         public ScheduledJobBuilder job(Job job) {
             this.job = job;
@@ -122,8 +130,13 @@ public class ScheduledJob {
             return this;
         }
 
+        public ScheduledJobBuilder lastUpdate(JobExecutionResponse executionResponse) {
+            this.executionResponse = executionResponse;
+            return this;
+        }
+
         public ScheduledJob build() {
-            return new ScheduledJob(job, scheduledId, retries, status, getLastUpdate());
+            return new ScheduledJob(job, scheduledId, retries, status, getLastUpdate(), executionResponse);
         }
 
         private ZonedDateTime getLastUpdate() {

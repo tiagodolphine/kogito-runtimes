@@ -55,15 +55,11 @@ public class JobResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public CompletionStage<Job> create(Job job) {
         LOGGER.debug("REST create {}", job);
-        final CompletionStage<Job> response = ReactiveStreams.fromPublisher(scheduler.schedule(job))
+        return ReactiveStreams.fromPublisher(scheduler.schedule(job))
                 .map(ScheduledJob::getJob)
                 .findFirst()
                 .run()
-                .thenApply(j -> j.orElseThrow(() -> new RuntimeException("Failed to schedule job " + job.getId())))
-                .whenComplete((r, t) -> Optional
-                        .ofNullable(t)
-                        .ifPresent(ex -> LOGGER.error("Error Scheduling Job: {}. Details: {}", job, t)));
-        return response;
+                .thenApply(j -> j.orElseThrow(() -> new RuntimeException("Failed to schedule job " + job)));
     }
 
     @DELETE
@@ -76,7 +72,7 @@ public class JobResource {
                 .thenApply(result -> Optional
                         .ofNullable(result)
                         .map(ScheduledJob::getJob)
-                        .orElseThrow(() -> new RuntimeException("Failed to cancel job scheduling")));
+                        .orElseThrow(() -> new RuntimeException("Failed to cancel job scheduling for jobId " + id)));
     }
 
     @GET
