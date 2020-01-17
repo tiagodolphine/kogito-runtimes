@@ -28,6 +28,8 @@ public class JobDataEvent extends AbstractDataEvent<ScheduledJob> {
 
     public static final String JOB_EVENT_TYPE = "JobEvent";
 
+    private String kogitoJobId;
+
     public JobDataEvent(String source, ScheduledJob data) {
         super(JOB_EVENT_TYPE,
               source,
@@ -37,6 +39,11 @@ public class JobDataEvent extends AbstractDataEvent<ScheduledJob> {
               data.getProcessId(),
               data.getRootProcessId(),
               null);
+        this.kogitoJobId = data.getId();
+    }
+
+    public String getKogitoJobId() {
+        return kogitoJobId;
     }
 
     @JsonIgnore
