@@ -16,6 +16,7 @@
 package org.kie.kogito.codegen.process;
 
 import static org.kie.kogito.codegen.ApplicationGenerator.log;
+import static org.kie.kogito.codegen.ApplicationGenerator.logger;
 
 import java.io.File;
 import java.io.IOException;
@@ -32,6 +33,12 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.victools.jsonschema.generator.OptionPreset;
+import com.github.victools.jsonschema.generator.SchemaGenerator;
+import com.github.victools.jsonschema.generator.SchemaGeneratorConfig;
+import com.github.victools.jsonschema.generator.SchemaGeneratorConfigBuilder;
 import org.drools.core.io.impl.FileSystemResource;
 import org.drools.core.util.StringUtils;
 import org.drools.core.xml.SemanticModules;
@@ -370,6 +377,24 @@ public class ProcessCodegen extends AbstractGenerator {
 
             for (UserTaskModelMetaData ut : utmd) {
                 storeFile(Type.MODEL, UserTasksModelClassGenerator.generatedFilePath(ut.getInputModelClassName()), ut.generateInput());
+
+                try {
+                    Class<?> inputClass = Thread.currentThread().getContextClassLoader().loadClass(ut.getInputModelClassName());
+
+                        ObjectMapper objectMapper = new ObjectMapper();
+                        SchemaGeneratorConfigBuilder configBuilder = new SchemaGeneratorConfigBuilder(objectMapper, OptionPreset.PLAIN_JSON);
+                        SchemaGeneratorConfig config = configBuilder.build();
+                        SchemaGenerator generator = new SchemaGenerator(config);
+                        JsonNode jsonSchema = generator.generateSchema(inputClass);
+
+                        System.out.println( objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonSchema));
+
+                }catch (Exception e){
+                    logger.error("a", e);
+                }
+
+
+
 
                 storeFile(Type.MODEL, UserTasksModelClassGenerator.generatedFilePath(ut.getOutputModelClassName()), ut.generateOutput());
             }

@@ -80,6 +80,13 @@
       <artifactId>protostream</artifactId>
     </dependency>
 
+    <!-- Json Schema -->
+    <dependency>
+      <groupId>com.github.victools</groupId>
+      <artifactId>jsonschema-generator</artifactId>
+      <version>4.1.0</version>
+    </dependency>
+
     <!-- test -->
     <dependency>
       <groupId>org.junit.jupiter</groupId>
