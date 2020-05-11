@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn2:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.omg.org/bpmn20" xmlns:bpmn2="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:bpsim="http://www.bpsim.org/schemas/1.0" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:drools="http://www.jboss.org/drools" id="_cW5d0I6zEeqPjdRRL5zr9w" xsi:schemaLocation="http://www.omg.org/spec/BPMN/20100524/MODEL BPMN20.xsd http://www.jboss.org/drools drools.xsd http://www.bpsim.org/schemas/1.0 bpsim.xsd http://www.omg.org/spec/DD/20100524/DC DC.xsd http://www.omg.org/spec/DD/20100524/DI DI.xsd " exporter="jBPM Process Modeler" exporterVersion="2.0" targetNamespace="http://www.omg.org/bpmn20">
+  <bpmn2:itemDefinition id="_caseVar1Item" structureRef="String"/>
+  <bpmn2:itemDefinition id="_caseVar2Item" structureRef="Boolean"/>
+  <bpmn2:itemDefinition id="_caseFile_caseFileVar1Item" structureRef="String"/>
+  <bpmn2:itemDefinition id="_caseFile_caseFileVar2Item" structureRef="Boolean"/>
+  <bpmn2:itemDefinition id="__01B665AF-D49E-4293-907E-4D689501EC46_SkippableInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__01B665AF-D49E-4293-907E-4D689501EC46_PriorityInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__01B665AF-D49E-4293-907E-4D689501EC46_CommentInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__01B665AF-D49E-4293-907E-4D689501EC46_DescriptionInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__01B665AF-D49E-4293-907E-4D689501EC46_CreatedByInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__01B665AF-D49E-4293-907E-4D689501EC46_TaskNameInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__01B665AF-D49E-4293-907E-4D689501EC46_GroupIdInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__01B665AF-D49E-4293-907E-4D689501EC46_ContentInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__01B665AF-D49E-4293-907E-4D689501EC46_NotStartedReassignInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__01B665AF-D49E-4293-907E-4D689501EC46_NotCompletedReassignInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__01B665AF-D49E-4293-907E-4D689501EC46_NotStartedNotifyInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__01B665AF-D49E-4293-907E-4D689501EC46_NotCompletedNotifyInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__01B665AF-D49E-4293-907E-4D689501EC46_inFileVarInputXItem" structureRef="String"/>
+  <bpmn2:itemDefinition id="__01B665AF-D49E-4293-907E-4D689501EC46_outFileVarOutputXItem" structureRef="Boolean"/>
+  <bpmn2:process id="TestCase.MyCaseMgmt" drools:packageName="com.myspace.testcase" drools:version="1.0" drools:adHoc="true" name="MyCaseMgmt" isExecutable="true">
+    <bpmn2:extensionElements>
+      <drools:metaData name="customCaseIdPrefix">
+        <drools:metaValue><![CDATA[TEST]]></drools:metaValue>
+      </drools:metaData>
+      <drools:metaData name="customCaseRoles">
+        <drools:metaValue><![CDATA[unbounded:,role:2]]></drools:metaValue>
+      </drools:metaData>
+    </bpmn2:extensionElements>
+    <bpmn2:property id="caseVar1" itemSubjectRef="_caseVar1Item" name="caseVar1"/>
+    <bpmn2:property id="caseVar2" itemSubjectRef="_caseVar2Item" name="caseVar2"/>
+    <bpmn2:property id="caseFile_caseFileVar1" itemSubjectRef="_caseFile_caseFileVar1Item" name="caseFile_caseFileVar1"/>
+    <bpmn2:property id="caseFile_caseFileVar2" itemSubjectRef="_caseFile_caseFileVar2Item" name="caseFile_caseFileVar2"/>
+    <bpmn2:adHocSubProcess id="_28755162-5498-4A4E-B4DA-705311FBF23D" name="Stage1" ordering="Sequential">
+      <bpmn2:extensionElements>
+        <drools:metaData name="elementname">
+          <drools:metaValue><![CDATA[Stage1]]></drools:metaValue>
+        </drools:metaData>
+        <drools:metaData name="customAutoStart">
+          <drools:metaValue><![CDATA[true]]></drools:metaValue>
+        </drools:metaData>
+      </bpmn2:extensionElements>
+      <bpmn2:userTask id="_01B665AF-D49E-4293-907E-4D689501EC46" name="TheHumanTask">
+        <bpmn2:extensionElements>
+          <drools:metaData name="elementname">
+            <drools:metaValue><![CDATA[TheHumanTask]]></drools:metaValue>
+          </drools:metaData>
+          <drools:metaData name="customAutoStart">
+            <drools:metaValue><![CDATA[true]]></drools:metaValue>
+          </drools:metaData>
+        </bpmn2:extensionElements>
+        <bpmn2:ioSpecification id="_cW5d0Y6zEeqPjdRRL5zr9w">
+          <bpmn2:dataInput id="_01B665AF-D49E-4293-907E-4D689501EC46_TaskNameInputX" drools:dtype="Object" itemSubjectRef="__01B665AF-D49E-4293-907E-4D689501EC46_TaskNameInputXItem" name="TaskName"/>
+          <bpmn2:dataInput id="_01B665AF-D49E-4293-907E-4D689501EC46_inFileVarInputX" drools:dtype="String" itemSubjectRef="__01B665AF-D49E-4293-907E-4D689501EC46_inFileVarInputXItem" name="inFileVar"/>
+          <bpmn2:dataInput id="_01B665AF-D49E-4293-907E-4D689501EC46_SkippableInputX" drools:dtype="Object" itemSubjectRef="__01B665AF-D49E-4293-907E-4D689501EC46_SkippableInputXItem" name="Skippable"/>
+          <bpmn2:dataOutput id="_01B665AF-D49E-4293-907E-4D689501EC46_outFileVarOutputX" drools:dtype="Boolean" itemSubjectRef="__01B665AF-D49E-4293-907E-4D689501EC46_outFileVarOutputXItem" name="outFileVar"/>
+          <bpmn2:inputSet id="_cW5d0o6zEeqPjdRRL5zr9w">
+            <bpmn2:dataInputRefs>_01B665AF-D49E-4293-907E-4D689501EC46_TaskNameInputX</bpmn2:dataInputRefs>
+            <bpmn2:dataInputRefs>_01B665AF-D49E-4293-907E-4D689501EC46_inFileVarInputX</bpmn2:dataInputRefs>
+            <bpmn2:dataInputRefs>_01B665AF-D49E-4293-907E-4D689501EC46_SkippableInputX</bpmn2:dataInputRefs>
+          </bpmn2:inputSet>
+          <bpmn2:outputSet id="_cW5d046zEeqPjdRRL5zr9w">
+            <bpmn2:dataOutputRefs>_01B665AF-D49E-4293-907E-4D689501EC46_outFileVarOutputX</bpmn2:dataOutputRefs>
+          </bpmn2:outputSet>
+        </bpmn2:ioSpecification>
+        <bpmn2:dataInputAssociation id="_cW5d1I6zEeqPjdRRL5zr9w">
+          <bpmn2:targetRef>_01B665AF-D49E-4293-907E-4D689501EC46_TaskNameInputX</bpmn2:targetRef>
+          <bpmn2:assignment id="_cW5d1Y6zEeqPjdRRL5zr9w">
+            <bpmn2:from xsi:type="bpmn2:tFormalExpression" id="_cW5d1o6zEeqPjdRRL5zr9w"><![CDATA[Task]]></bpmn2:from>
+            <bpmn2:to xsi:type="bpmn2:tFormalExpression" id="_cW6E4I6zEeqPjdRRL5zr9w">_01B665AF-D49E-4293-907E-4D689501EC46_TaskNameInputX</bpmn2:to>
+          </bpmn2:assignment>
+        </bpmn2:dataInputAssociation>
+        <bpmn2:dataInputAssociation id="_cW6E4Y6zEeqPjdRRL5zr9w">
+          <bpmn2:sourceRef>caseFile_caseFileVar1</bpmn2:sourceRef>
+          <bpmn2:targetRef>_01B665AF-D49E-4293-907E-4D689501EC46_inFileVarInputX</bpmn2:targetRef>
+        </bpmn2:dataInputAssociation>
+        <bpmn2:dataInputAssociation id="_cW6E4o6zEeqPjdRRL5zr9w">
+          <bpmn2:targetRef>_01B665AF-D49E-4293-907E-4D689501EC46_SkippableInputX</bpmn2:targetRef>
+          <bpmn2:assignment id="_cW6E446zEeqPjdRRL5zr9w">
+            <bpmn2:from xsi:type="bpmn2:tFormalExpression" id="_cW6E5I6zEeqPjdRRL5zr9w"><![CDATA[false]]></bpmn2:from>
+            <bpmn2:to xsi:type="bpmn2:tFormalExpression" id="_cW6E5Y6zEeqPjdRRL5zr9w">_01B665AF-D49E-4293-907E-4D689501EC46_SkippableInputX</bpmn2:to>
+          </bpmn2:assignment>
+        </bpmn2:dataInputAssociation>
+        <bpmn2:dataOutputAssociation id="_cW6E5o6zEeqPjdRRL5zr9w">
+          <bpmn2:sourceRef>_01B665AF-D49E-4293-907E-4D689501EC46_outFileVarOutputX</bpmn2:sourceRef>
+          <bpmn2:targetRef>caseFile_caseFileVar2</bpmn2:targetRef>
+        </bpmn2:dataOutputAssociation>
+      </bpmn2:userTask>
+      <bpmn2:completionCondition xsi:type="bpmn2:tFormalExpression" id="_cW6E546zEeqPjdRRL5zr9w" language="http://www.mvel.org/2.0"><![CDATA[autocomplete]]></bpmn2:completionCondition>
+    </bpmn2:adHocSubProcess>
+  </bpmn2:process>
+  <bpmndi:BPMNDiagram id="_cW6E6I6zEeqPjdRRL5zr9w">
+    <bpmndi:BPMNPlane id="_cW6E6Y6zEeqPjdRRL5zr9w" bpmnElement="TestCase.MyCaseMgmt">
+      <bpmndi:BPMNShape id="shape__28755162-5498-4A4E-B4DA-705311FBF23D" bpmnElement="_28755162-5498-4A4E-B4DA-705311FBF23D" isExpanded="true">
+        <dc:Bounds height="153.0" width="203.0"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="shape__01B665AF-D49E-4293-907E-4D689501EC46" bpmnElement="_01B665AF-D49E-4293-907E-4D689501EC46">
+        <dc:Bounds height="103.0" width="153.0" x="25.0" y="25.0"/>
+      </bpmndi:BPMNShape>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+  <bpmn2:relationship id="_cW6E6o6zEeqPjdRRL5zr9w" type="BPSimData">
+    <bpmn2:extensionElements>
+      <bpsim:BPSimData>
+        <bpsim:Scenario xsi:type="bpsim:Scenario" id="default" name="Simulationscenario">
+          <bpsim:ScenarioParameters xsi:type="bpsim:ScenarioParameters"/>
+        </bpsim:Scenario>
+      </bpsim:BPSimData>
+    </bpmn2:extensionElements>
+    <bpmn2:source>_cW5d0I6zEeqPjdRRL5zr9w</bpmn2:source>
+    <bpmn2:target>_cW5d0I6zEeqPjdRRL5zr9w</bpmn2:target>
+  </bpmn2:relationship>
+</bpmn2:definitions>

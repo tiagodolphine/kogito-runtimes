@@ -201,12 +201,24 @@ public class RuleFlowProcessFactory extends RuleFlowNodeContainerFactory {
         return this;
     }
 
-    public RuleFlowNodeContainerFactory done() {
+    public RuleFlowProcessFactory done() {
         throw new IllegalArgumentException("Already on the top-level.");
     }
 
     public RuleFlowProcess getProcess() {
         return getRuleFlowProcess();
+    }
+
+    @Override
+    public RuleFlowProcessFactory connection(long fromId, long toId) {
+        super.connection(fromId, toId);
+        return this;
+    }
+
+    @Override
+    public RuleFlowProcessFactory connection(long fromId, long toId, String uniqueId) {
+        super.connection(fromId, toId, uniqueId);
+        return this;
     }
 
     protected void linkBoundaryEvents(NodeContainer nodeContainer) {

@@ -170,7 +170,6 @@ public abstract class AbstractProcessInstance<T extends Model> implements Proces
     }
 
     public void abort() {
-
         String pid = legacyProcessInstance().getId();
         unbind(variables, legacyProcessInstance().getVariables());        
         this.rt.abortProcessInstance(pid);
@@ -299,7 +298,7 @@ public abstract class AbstractProcessInstance<T extends Model> implements Proces
         removeOnFinish();
     }
 
-    private org.kie.api.runtime.process.ProcessInstance legacyProcessInstance() {
+    protected org.kie.api.runtime.process.ProcessInstance legacyProcessInstance() {
         if (this.legacyProcessInstance == null) {
             this.legacyProcessInstance = reloadSupplier.get();
             if (this.legacyProcessInstance == null) {
