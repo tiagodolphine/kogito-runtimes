@@ -36,8 +36,8 @@ public class TopicInformationResourceTest {
     void verifyTopicsInformation() {
         final List<Topic> topics = Arrays.asList(given().get("/messaging/topics").as(Topic[].class));
         assertThat(topics, notNullValue());
-        assertThat(topics, hasItem(new Topic("pong_send_start", TopicType.PRODUCED)));
-        assertThat(topics, hasItem(new Topic("pong_receive_end", TopicType.CONSUMED)));
+        assertThat(topics, hasItem(new Topic("pong", TopicType.PRODUCED)));
+        assertThat(topics, hasItem(new Topic("ping", TopicType.CONSUMED)));
     }
 
 }
