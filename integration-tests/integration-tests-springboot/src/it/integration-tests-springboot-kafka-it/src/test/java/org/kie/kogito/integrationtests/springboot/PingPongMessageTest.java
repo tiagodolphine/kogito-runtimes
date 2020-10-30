@@ -46,26 +46,8 @@ import static org.hamcrest.CoreMatchers.equalTo;
 @ContextConfiguration(initializers =  { KafkaSpringBootTestResource.class, InfinispanSpringBootTestResource.Conditional.class })
 public class PingPongMessageTest extends BaseRestTest {
 
-    @Autowired
-    @Qualifier(KogitoEventStreams.PUBLISHER)
-    Publisher<String> publisher;
-
     @Test
-    void testPingPongBetweenProcessInstances() throws InterruptedException {
-        CountDownLatch latch = new CountDownLatch(1);
-        Flux.from(publisher)
-                .map(x -> {
-                    try {
-                        return (Map<String, String>) new ObjectMapper().readValue(x, Map.class);
-                    } catch (JsonProcessingException e) {
-                        throw new Error(e);
-                    }
-                })
-                .filter(m -> "hello world".equals(m.get("data")) &&
-                        m.getOrDefault("source", "").startsWith("/process/pong_message/"))
-                .log("Found message")
-                .subscribe(x -> latch.countDown());
-
+    void testPingPongBetweenProcessInstances() {
         String pId = given().body("{ \"message\": \"hello\" }")
                 .contentType(ContentType.JSON)
                 .when()
@@ -98,22 +80,9 @@ public class PingPongMessageTest extends BaseRestTest {
                 .get("/ping_message/{pId}", pId)
                 .then()
                 .statusCode(404);
-
-        latch.await(5, TimeUnit.SECONDS);
-
     }
 
-
     private void validateSubProcess(){
-        await().atMost(Duration.ofSeconds(5))
-                .untilAsserted(() -> given()
-                        .contentType(ContentType.JSON)
-                        .when()
-                        .get("/pong_message/")
-                        .then()
-                        .statusCode(200)
-                        .body("$.size", equalTo(1)));
-
         String pId = given()
                 .contentType(ContentType.JSON)
                 .when()
