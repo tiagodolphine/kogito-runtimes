@@ -14,16 +14,18 @@
  * limitations under the License.
  */
 
-package org.kie.kogito.integrationtests.quarkus;
+package org.kie.kogito.integrationtests.springboot;
 
 import java.util.List;
 
-import io.quarkus.test.common.QuarkusTestResource;
-import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import org.junit.jupiter.api.Test;
-import org.kie.kogito.testcontainers.quarkus.InfinispanQuarkusTestResource;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.kie.kogito.testcontainers.springboot.InfinispanSpringBootTestResource;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.test.context.ContextConfiguration;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -32,24 +34,24 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.emptyOrNullString;
 
-@QuarkusTest
-@QuarkusTestResource(InfinispanQuarkusTestResource.Conditional.class)
-class ManagementAddOnTest {
+@ExtendWith(SpringExtension.class)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = KogitoSpringbootApplication.class)
+@ContextConfiguration(initializers = InfinispanSpringBootTestResource.Conditional.class)
+class ManagementAddOnTest extends BaseRestTest {
 
     private static final String HELLO1_NODE = "_3CDC6E61-DCC5-4831-8BBB-417CFF517CB0";
     private static final String GREETINGS = "greetings";
-
+    
     static {
         RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
     }
-
+    
     @Test
     void testGetProcessNodesWithInvalidProcessId() {
-        given()
-                .contentType(ContentType.JSON)
-                .when()
+        given().contentType(ContentType.JSON)
+            .when()
                 .get("/management/processes/{processId}/nodes", "aprocess")
-                .then()
+            .then()
                 .statusCode(404)
                 .body(equalTo("Process with id aprocess not found"));
     }
@@ -59,10 +61,10 @@ class ManagementAddOnTest {
         String pid = givenGreetingsProcess();
 
         given().contentType(ContentType.JSON)
-               .when()
-               .delete("/management/processes/{processId}/instances/{processInstanceId}", GREETINGS, pid)
-               .then()
-               .statusCode(200);
+            .when()
+                .delete("/management/processes/{processId}/instances/{processInstanceId}", GREETINGS, pid)
+            .then()
+                .statusCode(200);
     }
 
     @Test
@@ -70,15 +72,15 @@ class ManagementAddOnTest {
         String pid = givenGreetingsProcess();
 
         given().contentType(ContentType.JSON)
-               .when()
-               .get("/management/processes/{processId}/instances/{processInstanceId}/nodeInstances", GREETINGS, pid)
-               .then()
-               .statusCode(200)
-               .body("$.size", is(2))
-               .body("[0].name", is("Hello2"))
-               .body("[0].state", is(0))
-               .body("[1].name", is("Hello1"))
-               .body("[1].state", is(0));
+            .when()
+                .get("/management/processes/{processId}/instances/{processInstanceId}/nodeInstances", GREETINGS, pid)
+            .then()
+                .statusCode(200)
+                .body("$.size", is(2))
+                .body("[0].name", is("Hello2"))
+                .body("[0].state", is(0))
+                .body("[1].name", is("Hello1"))
+                .body("[1].state", is(0));
     }
 
     @Test
@@ -113,10 +115,10 @@ class ManagementAddOnTest {
 
         // then trigger new node instance via management interface
         given().contentType(ContentType.JSON)
-               .when()
-               .post("/management/processes/{processId}/instances/{processInstanceId}/nodes/{node}", GREETINGS, pid, HELLO1_NODE)
-               .then()
-               .statusCode(200);
+            .when()
+                .post("/management/processes/{processId}/instances/{processInstanceId}/nodes/{node}", GREETINGS, pid, HELLO1_NODE)
+            .then()
+                .statusCode(200);
 
         // since node instance was retriggered it must have different ids
         List<String> newNodeInstanceIds = whenGetNodeInstances(pid);
@@ -126,29 +128,30 @@ class ManagementAddOnTest {
 
     private String givenGreetingsProcess() {
         return given().contentType(ContentType.JSON)
-                      .when()
-                      .post("/greetings")
-                      .then()
-                      .statusCode(201)
-                      .body("id", not(emptyOrNullString()))
-                      .body("test", emptyOrNullString())
-                      .extract().path("id");
+                .when()
+                    .post("/greetings")
+                .then()
+                    .statusCode(201)
+                    .body("id", not(emptyOrNullString()))
+                    .body("test", emptyOrNullString())
+                    .header("Location", not(emptyOrNullString()))
+                .extract().path("id");
     }
 
     private void whenCancelNodeInstance(String pid, String nodeInstanceId) {
         given().contentType(ContentType.JSON)
-               .when()
-               .delete("/management/processes/{processId}/instances/{processInstanceId}/nodeInstances/{nodeInstanceId}", GREETINGS, pid, nodeInstanceId)
-               .then()
-               .statusCode(200);
+            .when()
+                .delete("/management/processes/{processId}/instances/{processInstanceId}/nodeInstances/{nodeInstanceId}", GREETINGS, pid, nodeInstanceId)
+            .then()
+                .statusCode(200);
     }
 
     private List<String> whenGetNodeInstances(String pid) {
         return given().contentType(ContentType.JSON)
-                      .when()
-                      .get("/management/processes/{processId}/instances/{processInstanceId}/nodeInstances", GREETINGS, pid)
-                      .then()
-                      .statusCode(200)
-                      .extract().response().jsonPath().getList("nodeInstanceId");
+                .when()
+                    .get("/management/processes/{processId}/instances/{processInstanceId}/nodeInstances", GREETINGS, pid)
+                .then()
+                    .statusCode(200)
+                .extract().response().jsonPath().getList("nodeInstanceId");
     }
 }
