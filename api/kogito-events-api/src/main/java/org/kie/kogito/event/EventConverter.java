@@ -13,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.kie.kogito.addon.cloudevents.quarkus;
+package org.kie.kogito.event;
 
-import java.util.Collection;
+import java.util.function.Function;
 
-public interface ChannelResolver {
+public interface EventConverter<S, T> extends Function<S, T> {
+    Class<S> getInputClass();
 
-    Collection<String> getOuputChannels();
-
-    Collection<String> getInputChannels();
+    Class<T> getOutputClass();
 }

@@ -34,6 +34,7 @@ import org.kie.kogito.dmn.rest.KogitoDMNResult;
 import org.kie.kogito.event.EventEmitter;
 import org.kie.kogito.event.EventReceiver;
 import org.kie.kogito.event.SubscriptionInfo;
+import org.kie.kogito.services.event.impl.JsonStringToObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,7 +74,8 @@ public class EventDrivenDecisionController {
     }
 
     protected void setup() {
-        eventReceiver.subscribe(this::handleRequest, new SubscriptionInfo(CloudEvent.class));
+        eventReceiver.subscribe(this::handleRequest, new SubscriptionInfo<>(new JsonStringToObject<>(
+                CloudEvent.class)));
     }
 
     void handleEvent(String event) {

@@ -20,11 +20,17 @@ import org.kie.kogito.conf.ConfigBean;
 import org.kie.kogito.event.impl.DefaultEventConsumerFactory;
 import org.kie.kogito.process.Process;
 import org.kie.kogito.services.event.impl.AbstractMessageConsumer;
+import org.kie.kogito.services.event.impl.JsonStringToObject;
 import org.kie.kogito.event.EventReceiver;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @org.springframework.stereotype.Component()
 public class $Type$MessageConsumer extends AbstractMessageConsumer<$Type$, $DataType$, $DataEventType$> {
 
+    @org.springframework.beans.factory.annotation.Autowired()
+    ObjectMapper objectMapper;
+    
     @org.springframework.beans.factory.annotation.Autowired()
     $Type$MessageConsumer(
             Application application,
@@ -36,8 +42,8 @@ public class $Type$MessageConsumer extends AbstractMessageConsumer<$Type$, $Data
               "$Trigger$",
               new DefaultEventConsumerFactory(),
               eventReceiver,
-              $DataType$.class,
-              $DataEventType$.class,
+              new JsonStringToObject (objectMapper, $DataType$.class),
+              new JsonStringToObject (objectMapper, $DataEventType$.class),
               configBean.useCloudEvents());
     }
 

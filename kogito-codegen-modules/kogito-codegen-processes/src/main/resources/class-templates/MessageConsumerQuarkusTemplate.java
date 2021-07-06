@@ -16,17 +16,26 @@
 package $Package$;
 
 import org.kie.kogito.Application;
+import io.quarkus.runtime.annotations.RegisterForReflection;
 import org.kie.kogito.conf.ConfigBean;
 import org.kie.kogito.event.impl.DefaultEventConsumerFactory;
 import org.kie.kogito.process.Process;
 import org.kie.kogito.services.event.impl.AbstractMessageConsumer;
+import org.kie.kogito.services.event.impl.JsonStringToObject;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.kie.kogito.event.EventReceiver;
 
 @io.quarkus.runtime.Startup
+@RegisterForReflection
 public class $Type$MessageConsumer extends AbstractMessageConsumer<$Type$, $DataType$, $DataEventType$> {
 
     @javax.inject.Inject
     Application application;
+    
+    @javax.inject.Inject
+    ObjectMapper objectMapper;
 
     @javax.inject.Inject
     @javax.inject.Named("$ProcessName$") Process<$Type$> process;
@@ -44,8 +53,8 @@ public class $Type$MessageConsumer extends AbstractMessageConsumer<$Type$, $Data
              "$Trigger$",
              new DefaultEventConsumerFactory(),
              eventReceiver,
-             $DataType$.class,
-             $DataEventType$.class,
+             new JsonStringToObject (objectMapper, $DataType$.class),
+             new JsonStringToObject (objectMapper, $DataEventType$.class),
              configBean.useCloudEvents());
 
     }

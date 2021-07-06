@@ -17,7 +17,6 @@ package org.kie.kogito.addon.cloudevents.spring;
 
 import java.util.function.Consumer;
 
-import org.kie.kogito.addon.cloudevents.JsonStringToObjectConsumer;
 import org.kie.kogito.event.EventReceiver;
 import org.kie.kogito.event.KogitoEventStreams;
 import org.kie.kogito.event.SubscriptionInfo;
@@ -25,8 +24,6 @@ import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import reactor.core.publisher.Flux;
 
@@ -37,11 +34,8 @@ public class SpringBootCloudEventReceiver implements EventReceiver {
     @Qualifier(KogitoEventStreams.PUBLISHER)
     Publisher<String> eventPublisher;
 
-    @Autowired
-    private ObjectMapper objectMapper;
-
     @Override
-    public <T> void subscribe(Consumer<T> consumer, SubscriptionInfo<T> info) {
-        Flux.from(eventPublisher).subscribe(new JsonStringToObjectConsumer<>(objectMapper, consumer, info.getEventType()));
+    public <S, T> void subscribe(Consumer<T> consumer, SubscriptionInfo<S, T> info) {
+        Flux.from(eventPublisher).subscribe(t -> consumer.accept(info.getConverter().apply((S) t)));
     }
 }

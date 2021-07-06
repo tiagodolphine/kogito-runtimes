@@ -15,14 +15,11 @@
  */
 package org.kie.kogito.addon.cloudevents.quarkus;
 
-import java.util.concurrent.CompletionStage;
-
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
 import javax.inject.Named;
 
 import org.eclipse.microprofile.reactive.messaging.Incoming;
-import org.eclipse.microprofile.reactive.messaging.Message;
 import org.kie.kogito.event.KogitoEventStreams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,6 +27,7 @@ import org.slf4j.LoggerFactory;
 import io.quarkus.runtime.Startup;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.operators.multi.processors.BroadcastProcessor;
+import io.smallrye.reactive.messaging.annotations.Blocking;
 
 @Startup
 @ApplicationScoped
@@ -54,19 +52,13 @@ public class QuarkusCloudEventPublisher {
     /**
      * Listens to a message published in the {@link KogitoEventStreams#INCOMING} channel
      *
-     * @param message the given message in JSON format
-     * @return a {@link CompletionStage} after ack-ing the message
+     * @param message the given message in string format
      */
     @Incoming(KogitoEventStreams.INCOMING)
-    public CompletionStage<Void> onEvent(Message<String> message) {
-        LOGGER.debug("Received message from channel {}: {}", KogitoEventStreams.INCOMING, message);
-        produce(message.getPayload());
-        return message
-                .ack()
-                .exceptionally(e -> {
-                    LOGGER.error("Failed to ack message", e);
-                    return null;
-                });
+    @Blocking(KogitoEventStreams.WORKER_THREAD)
+    public void onEvent(String payload) {
+        LOGGER.debug("Received message from channel {}: {}", KogitoEventStreams.INCOMING, payload);
+        produce(payload);
     }
 
     /**

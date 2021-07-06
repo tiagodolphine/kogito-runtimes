@@ -19,59 +19,63 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.CompletionStage;
+import java.util.Set;
+import java.util.function.Consumer;
 
-import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Produces;
+import javax.enterprise.inject.Instance;
+import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.inject.Inject;
-import javax.inject.Named;
 
-import org.eclipse.microprofile.reactive.messaging.Message;
+import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
+import org.eclipse.microprofile.reactive.messaging.Acknowledgment.Strategy;
+import org.kie.kogito.event.EventReceiver;
+import org.kie.kogito.event.InputTriggerAware;
 import org.kie.kogito.event.KogitoEventStreams;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.kie.kogito.event.SubscriptionInfo;
 
-import io.quarkus.runtime.annotations.RegisterForReflection;
-import io.smallrye.mutiny.Multi;
-import io.smallrye.mutiny.operators.multi.processors.BroadcastProcessor;
 import io.smallrye.reactive.messaging.ChannelRegistar;
 import io.smallrye.reactive.messaging.DefaultMediatorConfiguration;
 import io.smallrye.reactive.messaging.MediatorConfiguration;
 import io.smallrye.reactive.messaging.Shape;
+import io.smallrye.reactive.messaging.annotations.Merge;
+import io.smallrye.reactive.messaging.annotations.Merge.Mode;
+import io.smallrye.reactive.messaging.connectors.WorkerPoolRegistry;
 import io.smallrye.reactive.messaging.extension.MediatorManager;
 
 @ApplicationScoped
-@RegisterForReflection
-public class QuarkusMultiCloudEventPublisher implements ChannelRegistar {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(QuarkusMultiCloudEventPublisher.class);
+public class QuarkusMultiCloudEventPublisher implements ChannelRegistar, EventReceiver {
 
     @Inject
+    private Instance<InputTriggerAware> channels;
+    @Inject
     private MediatorManager mediatorManager;
+    @Inject
+    private WorkerPoolRegistry workerPoolRegistry;
 
     @Inject
     private BeanManager beanManager;
 
-    @Inject
-    private ChannelResolver channelResolver;
-
-    private BroadcastProcessor<String> processor;
-
-    @PostConstruct
-    private void init() {
-        processor = BroadcastProcessor.create();
+    private Bean<?> getBean(InputTriggerAware channel) {
+        Set<Bean<?>> beans = beanManager.getBeans(InputTriggerAware.class);
+        for (Bean<?> bean : beans) {
+            if (bean.getBeanClass().isAssignableFrom(channel.getClass())) {
+                return bean;
+            }
+        }
+        throw new IllegalStateException("No bean found for " + channel.getClass());
     }
 
-    private Collection<MediatorConfiguration> mediatorConf(Collection<String> channels) throws NoSuchMethodException {
-        return Collections.singletonList(new DefaultMediatorConfiguration(
-                QuarkusMultiCloudEventPublisher.class.getMethod("produce", Message.class),
-                beanManager.resolve(beanManager.getBeans(QuarkusMultiCloudEventPublisher.class))) {
+    MediatorConfiguration mediatorConf(InputTriggerAware channel) {
+
+        return new DefaultMediatorConfiguration(
+                channel.getMethod(),
+                getBean(channel)) {
 
             @Override
             public List<String> getIncoming() {
-                return new ArrayList<>(channels);
+                return Collections.singletonList(channel.getInputTrigger());
             }
 
             @Override
@@ -81,49 +85,45 @@ public class QuarkusMultiCloudEventPublisher implements ChannelRegistar {
 
             @Override
             public Consumption consumption() {
-                return Consumption.MESSAGE;
+                return Consumption.PAYLOAD;
             }
-        });
-    }
 
-    /**
-     * Broadcasts the received/produced messages to subscribers
-     *
-     * @see <a href="https://smallrye.io/smallrye-mutiny/guides/hot-streams">How to create a hot stream?</a>
-     * @return A {@link Multi} message to subscribers
-     */
-    @Produces
-    @ApplicationScoped
-    @Named(KogitoEventStreams.PUBLISHER)
-    public Multi<String> producerFactory() {
-        return processor;
-    }
+            @Override
+            public boolean isBlocking() {
+                return true;
+            }
 
-    /**
-     * Produces a message in the internal application bus
-     *
-     * @param message the given CE message in JSON format
-     */
-    public CompletionStage<Void> produce(Message<String> message) {
-        LOGGER.debug("Received message from channel {}: {}", KogitoEventStreams.INCOMING, message);
-        processor.onNext(message.getPayload());
-        return message.ack()
-                .exceptionally(e -> {
-                    LOGGER.error("Failed to ack message", e);
-                    return null;
-                });
+            @Override
+            public Acknowledgment.Strategy getAcknowledgment() {
+                return Strategy.POST_PROCESSING;
+            }
+
+            @Override
+            public Merge.Mode getMerge() {
+                return Mode.MERGE;
+            }
+
+            @Override
+            public String getWorkerPoolName() {
+                return KogitoEventStreams.WORKER_THREAD;
+            }
+        };
     }
 
     @Override
     public void initialize() {
-        try {
-            Collection<String> inputChannels = channelResolver.getInputChannels();
-            if (!inputChannels.isEmpty()) {
-                mediatorManager.addAnalyzed(mediatorConf(inputChannels));
-            }
-        } catch (NoSuchMethodException e) {
-            throw new IllegalStateException(e);
+
+        Collection<MediatorConfiguration> mediators = new ArrayList<>();
+        channels.forEach(channel -> mediators.add(mediatorConf(channel)));
+        if (!mediators.isEmpty()) {
+            workerPoolRegistry.defineWorker("QuarkusMultCloudEventPublisher", "initialize", KogitoEventStreams.WORKER_THREAD);
+            mediatorManager.addAnalyzed(mediators);
         }
+    }
+
+    @Override
+    public <S, T> void subscribe(Consumer<T> consumer, SubscriptionInfo<S, T> subscription) {
+        // Subscription is automatic
     }
 
 }

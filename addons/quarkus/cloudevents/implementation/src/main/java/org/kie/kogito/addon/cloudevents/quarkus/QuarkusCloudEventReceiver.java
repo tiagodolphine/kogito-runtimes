@@ -21,13 +21,10 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.inject.Named;
 
-import org.kie.kogito.addon.cloudevents.JsonStringToObjectConsumer;
 import org.kie.kogito.event.EventReceiver;
 import org.kie.kogito.event.KogitoEventStreams;
 import org.kie.kogito.event.SubscriptionInfo;
-import org.reactivestreams.Publisher;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.LoggerFactory;
 
 import io.smallrye.mutiny.Multi;
 
@@ -36,14 +33,11 @@ public class QuarkusCloudEventReceiver implements EventReceiver {
 
     @Inject
     @Named(KogitoEventStreams.PUBLISHER)
-    Publisher<String> eventPublisher;
-
-    @Inject
-    private ObjectMapper objectMapper;
+    Multi<String> eventPublisher;
 
     @Override
-    public <T> void subscribe(Consumer<T> consumer, SubscriptionInfo<T> info) {
-        Multi.createFrom().publisher(eventPublisher).subscribe().with(
-                new JsonStringToObjectConsumer<>(objectMapper, consumer, info.getEventType()));
+    public <S, T> void subscribe(Consumer<T> consumer, SubscriptionInfo<S, T> info) {
+        eventPublisher.subscribe().with(t -> consumer.accept(info.getConverter().apply((S) t)), e -> LoggerFactory.getLogger(QuarkusCloudEventReceiver.class).error("Error", e));
     }
+
 }
