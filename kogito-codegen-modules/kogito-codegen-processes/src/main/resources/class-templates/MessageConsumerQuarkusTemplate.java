@@ -15,9 +15,17 @@
  */
 package $Package$;
 
-import org.kie.kogito.Application;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutorService;
+
 import io.quarkus.runtime.annotations.RegisterForReflection;
+
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.eclipse.microprofile.reactive.messaging.Message;
+import org.kie.kogito.Application;
 import org.kie.kogito.conf.ConfigBean;
+import org.kie.kogito.event.EventReceiver;
 import org.kie.kogito.event.impl.DefaultEventConsumerFactory;
 import org.kie.kogito.process.Process;
 import org.kie.kogito.services.event.impl.AbstractMessageConsumer;
@@ -25,7 +33,6 @@ import org.kie.kogito.services.event.impl.JsonStringToObject;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.kie.kogito.event.EventReceiver;
 
 @io.quarkus.runtime.Startup
 @RegisterForReflection
@@ -33,12 +40,13 @@ public class $Type$MessageConsumer extends AbstractMessageConsumer<$Type$, $Data
 
     @javax.inject.Inject
     Application application;
-    
+
     @javax.inject.Inject
     ObjectMapper objectMapper;
 
     @javax.inject.Inject
-    @javax.inject.Named("$ProcessName$") Process<$Type$> process;
+    @javax.inject.Named("$ProcessName$")
+    Process<$Type$> process;
 
     @javax.inject.Inject
     ConfigBean configBean;
@@ -49,14 +57,24 @@ public class $Type$MessageConsumer extends AbstractMessageConsumer<$Type$, $Data
     @javax.annotation.PostConstruct
     void init() {
         init(application,
-             process,
-             "$Trigger$",
-             new DefaultEventConsumerFactory(),
-             eventReceiver,
-             new JsonStringToObject (objectMapper, $DataType$.class),
-             new JsonStringToObject (objectMapper, $DataEventType$.class),
-             configBean.useCloudEvents());
+                process,
+                "$Trigger$",
+                new DefaultEventConsumerFactory(),
+                eventReceiver,
+                new JsonStringToObject(objectMapper, $DataType$.class),
+                new JsonStringToObject(objectMapper, $DataEventType$.class),
+                configBean.useCloudEvents());
 
+    }
+
+    public CompletionStage<?> processMessage(Message<String> message) {
+        CompletableFuture future = CompletableFuture.completedFuture(null);
+        future.thenCompose(t -> CompletableFuture.runAsync(() -> super.consumePayload(message.getPayload()),
+                executor).thenAccept(v -> {
+                    logger.debug("acking message {}", message.getPayload());
+                    message.ack();
+                }));
+        return future;
     }
 
     protected $Type$ eventToModel($DataType$ event) {

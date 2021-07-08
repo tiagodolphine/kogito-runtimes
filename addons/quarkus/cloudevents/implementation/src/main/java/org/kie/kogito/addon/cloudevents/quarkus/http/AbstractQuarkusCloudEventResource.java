@@ -25,7 +25,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import org.kie.kogito.addon.cloudevents.quarkus.QuarkusCloudEventPublisher;
+import org.kie.kogito.addon.cloudevents.quarkus.QuarkusCloudEventReceiver;
 import org.kie.kogito.cloudevents.Printer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,7 +48,7 @@ public abstract class AbstractQuarkusCloudEventResource {
     @Inject
     ObjectMapper objectMapper;
     @Inject
-    QuarkusCloudEventPublisher publisher;
+    QuarkusCloudEventReceiver publisher;
 
     @PostConstruct
     public void setup() {

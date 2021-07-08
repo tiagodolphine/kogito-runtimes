@@ -15,14 +15,10 @@
  */
 package org.kie.kogito.event;
 
-import java.lang.reflect.Method;
-
 /**
  * Indicates that a class is providing a input trigger.
  * This is used to resolve all classes providing input triggers for a particular process
  */
 public interface InputTriggerAware {
     String getInputTrigger();
-
-    Method getMethod();
 }

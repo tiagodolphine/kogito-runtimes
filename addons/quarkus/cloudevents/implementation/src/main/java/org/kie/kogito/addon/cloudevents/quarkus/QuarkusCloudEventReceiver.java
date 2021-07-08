@@ -29,6 +29,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.kie.kogito.event.EventReceiver;
+import org.kie.kogito.event.KogitoEventExecutor;
 import org.kie.kogito.event.KogitoEventStreams;
 import org.kie.kogito.event.SubscriptionInfo;
 import org.slf4j.Logger;
@@ -38,9 +39,9 @@ import io.quarkus.runtime.Startup;
 
 @Startup
 @ApplicationScoped
-public class QuarkusCloudEventPublisher implements EventReceiver {
+public class QuarkusCloudEventReceiver implements EventReceiver {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(QuarkusCloudEventPublisher.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(QuarkusCloudEventReceiver.class);
 
     private static final class Subscription<S, T> {
         private final Consumer<T> consumer;
@@ -83,7 +84,10 @@ public class QuarkusCloudEventPublisher implements EventReceiver {
     @Incoming(KogitoEventStreams.INCOMING)
     public CompletionStage<Void> onEvent(Message<String> message) {
         LOGGER.debug("Received message from channel {}: {}", KogitoEventStreams.INCOMING, message);
-        return produce(message.getPayload(), v -> message.ack());
+        return produce(message.getPayload(), v -> {
+            LOGGER.debug("Acking message {}", message.getPayload());
+            message.ack();
+        });
     }
 
     public CompletionStage<Void> produce(final String message) {
@@ -97,20 +101,15 @@ public class QuarkusCloudEventPublisher implements EventReceiver {
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public CompletableFuture<Void> produce(final String message, Consumer<Void> callback) {
-        LOGGER.debug("Producing message to internal bus: {}", message);
         CompletableFuture<Void> future = CompletableFuture.completedFuture(null);
         for (Subscription subscription : consumers) {
-            Runnable runnable = () -> subscription.getConsumer().accept(subscription.getInfo().getConverter().apply(message));
-            future.thenComposeAsync(f -> CompletableFuture.runAsync(runnable, service));
-        }
-        if (callback != null) {
-            future.thenAccept(callback);
+            future.thenCompose(f -> CompletableFuture.runAsync(() -> subscription.getConsumer().accept(subscription.getInfo().getConverter().apply(message)), service).thenAccept(callback));
         }
         return future;
     }
 
     @Override
     public <S, T> void subscribe(Consumer<T> consumer, SubscriptionInfo<S, T> info) {
-        consumers.add(new Subscription(consumer, info));
+        consumers.add(new Subscription<>(consumer, info));
     }
 }

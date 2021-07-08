@@ -15,14 +15,15 @@
  */
 package org.kie.kogito.services.event.impl;
 
-import java.lang.reflect.Method;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
 
 import org.kie.kogito.Application;
 import org.kie.kogito.Model;
 import org.kie.kogito.event.EventConverter;
 import org.kie.kogito.event.EventReceiver;
 import org.kie.kogito.event.InputTriggerAware;
+import org.kie.kogito.event.KogitoEventExecutor;
 import org.kie.kogito.event.SubscriptionInfo;
 import org.kie.kogito.process.Process;
 import org.kie.kogito.services.event.AbstractProcessDataEvent;
@@ -33,7 +34,9 @@ import org.slf4j.LoggerFactory;
 
 public abstract class AbstractMessageConsumer<M extends Model, D, T extends AbstractProcessDataEvent<D>> implements InputTriggerAware {
 
-    private static final Logger logger = LoggerFactory.getLogger(AbstractMessageConsumer.class);
+    protected static final Logger logger = LoggerFactory.getLogger(AbstractMessageConsumer.class);
+
+    protected static ExecutorService executor = KogitoEventExecutor.getEventExecutor(10, 1);
 
     private Process<M> process;
     private Application application;
@@ -42,7 +45,6 @@ public abstract class AbstractMessageConsumer<M extends Model, D, T extends Abst
     private boolean useCloudEvents;
     private EventConverter<String, D> dataEventConverter;
     private EventConverter<String, T> cloudEventConverter;
-    private Method consumeMethod;
 
     // in general we should favor the non-empty constructor
     // but there is an issue with Quarkus https://github.com/quarkusio/quarkus/issues/2949#issuecomment-513017781
@@ -81,34 +83,22 @@ public abstract class AbstractMessageConsumer<M extends Model, D, T extends Abst
         } else {
             eventReceiver.subscribe(this::consume, new SubscriptionInfo<>(dataEventConverter, Optional.of(trigger)));
         }
-        this.consumeMethod = getMethod("consumePayload", String.class);
         logger.info("Consumer for {} started", trigger);
     }
 
-    @Override
-    public Method getMethod() {
-        return consumeMethod;
-    }
-
-    private Method getMethod(String methodName, Class<?>... args) {
-        try {
-            return this.getClass().getMethod(methodName, args);
-        } catch (NoSuchMethodException e) {
-            throw new IllegalStateException(e);
-        }
-    }
-
-    public void consumeCloud(T payload) {
+    protected void consumeCloud(T payload) {
         logger.debug("Received {} for trigger {}", payload, trigger);
         eventConsumer.consume(application, process, payload, trigger);
+        logger.debug("Processed {} for trigger {}", payload, trigger);
     }
 
-    public void consume(D payload) {
+    protected void consume(D payload) {
         logger.debug("Received {} for trigger {}", payload, trigger);
         eventConsumer.consume(application, process, payload, trigger);
+        logger.debug("Processed {} for trigger {}", payload, trigger);
     }
 
-    public void consumePayload(String payload) {
+    protected void consumePayload(String payload) {
         if (useCloudEvents) {
             consumeCloud(cloudEventConverter.apply(payload));
         } else {

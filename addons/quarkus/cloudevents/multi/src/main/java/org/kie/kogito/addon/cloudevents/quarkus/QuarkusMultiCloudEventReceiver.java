@@ -15,6 +15,7 @@
  */
 package org.kie.kogito.addon.cloudevents.quarkus;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -30,6 +31,7 @@ import javax.inject.Inject;
 
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment.Strategy;
+import org.eclipse.microprofile.reactive.messaging.Message;
 import org.kie.kogito.event.EventReceiver;
 import org.kie.kogito.event.InputTriggerAware;
 import org.kie.kogito.event.KogitoEventStreams;
@@ -45,7 +47,7 @@ import io.smallrye.reactive.messaging.connectors.WorkerPoolRegistry;
 import io.smallrye.reactive.messaging.extension.MediatorManager;
 
 @ApplicationScoped
-public class QuarkusMultiCloudEventPublisher implements ChannelRegistar, EventReceiver {
+public class QuarkusMultiCloudEventReceiver implements ChannelRegistar, EventReceiver {
 
     @Inject
     private Instance<InputTriggerAware> channels;
@@ -70,7 +72,7 @@ public class QuarkusMultiCloudEventPublisher implements ChannelRegistar, EventRe
     MediatorConfiguration mediatorConf(InputTriggerAware channel) {
 
         return new DefaultMediatorConfiguration(
-                channel.getMethod(),
+                getMethod(channel),
                 getBean(channel)) {
 
             @Override
@@ -103,6 +105,16 @@ public class QuarkusMultiCloudEventPublisher implements ChannelRegistar, EventRe
                 return Mode.MERGE;
             }
         };
+    }
+
+    private Method getMethod(InputTriggerAware channel) {
+        Method[] methods = channel.getClass().getMethods();
+        for (Method m : methods) {
+            if (m.getParameterCount() == 1 && Message.class.isAssignableFrom(m.getParameterTypes()[0])) {
+                return m;
+            }
+        }
+        throw new IllegalStateException("Cannot find method that accept Message as input parameter in " + methods);
     }
 
     @Override
