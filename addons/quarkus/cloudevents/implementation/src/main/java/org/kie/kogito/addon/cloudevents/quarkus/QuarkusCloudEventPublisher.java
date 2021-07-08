@@ -15,38 +15,64 @@
  */
 package org.kie.kogito.addon.cloudevents.quarkus;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Produces;
-import javax.inject.Named;
+import java.util.Collection;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.function.Consumer;
 
+import javax.annotation.PostConstruct;
+import javax.enterprise.context.ApplicationScoped;
+
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
+import org.eclipse.microprofile.reactive.messaging.Message;
+import org.kie.kogito.event.EventReceiver;
 import org.kie.kogito.event.KogitoEventStreams;
+import org.kie.kogito.event.SubscriptionInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.quarkus.runtime.Startup;
-import io.smallrye.mutiny.Multi;
-import io.smallrye.mutiny.operators.multi.processors.BroadcastProcessor;
-import io.smallrye.reactive.messaging.annotations.Blocking;
 
 @Startup
 @ApplicationScoped
-public class QuarkusCloudEventPublisher {
+public class QuarkusCloudEventPublisher implements EventReceiver {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(QuarkusCloudEventPublisher.class);
 
-    protected BroadcastProcessor<String> processor = BroadcastProcessor.create();
+    private static final class Subscription<S, T> {
+        private final Consumer<T> consumer;
+        private final SubscriptionInfo<S, T> info;
 
-    /**
-     * Broadcasts the received/produced messages to subscribers
-     *
-     * @see <a href="https://smallrye.io/smallrye-mutiny/guides/hot-streams">How to create a hot stream?</a>
-     * @return A {@link Multi} message to subscribers
-     */
-    @Produces
-    @ApplicationScoped
-    @Named(KogitoEventStreams.PUBLISHER)
-    public Multi<String> producerFactory() {
-        return processor;
+        public Subscription(Consumer<T> consumer, SubscriptionInfo<S, T> info) {
+            this.consumer = consumer;
+            this.info = info;
+        }
+
+        public Consumer<T> getConsumer() {
+            return consumer;
+        }
+
+        public SubscriptionInfo<S, T> getInfo() {
+            return info;
+        }
+    }
+
+    private Collection<Subscription<?, ?>> consumers;
+    private ExecutorService service;
+
+    @ConfigProperty(name = KogitoEventExecutor.MAX_THREADS_PROPERTY, defaultValue = KogitoEventExecutor.DEFAULT_MAX_THREADS)
+    private int numThreads;
+
+    @ConfigProperty(name = KogitoEventExecutor.QUEUE_SIZE_PROPERTY, defaultValue = KogitoEventExecutor.DEFAULT_QUEUE_SIZE)
+    private int queueSize;
+
+    @PostConstruct
+    private void init() {
+        consumers = new CopyOnWriteArrayList<>();
+        service = KogitoEventExecutor.getEventExecutor(numThreads, queueSize);
     }
 
     /**
@@ -55,10 +81,13 @@ public class QuarkusCloudEventPublisher {
      * @param message the given message in string format
      */
     @Incoming(KogitoEventStreams.INCOMING)
-    @Blocking(KogitoEventStreams.WORKER_THREAD)
-    public void onEvent(String payload) {
-        LOGGER.debug("Received message from channel {}: {}", KogitoEventStreams.INCOMING, payload);
-        produce(payload);
+    public CompletionStage<Void> onEvent(Message<String> message) {
+        LOGGER.debug("Received message from channel {}: {}", KogitoEventStreams.INCOMING, message);
+        return produce(message.getPayload(), v -> message.ack());
+    }
+
+    public CompletionStage<Void> produce(final String message) {
+        return produce(message, null);
     }
 
     /**
@@ -66,8 +95,22 @@ public class QuarkusCloudEventPublisher {
      *
      * @param message the given CE message in JSON format
      */
-    public void produce(final String message) {
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    public CompletableFuture<Void> produce(final String message, Consumer<Void> callback) {
         LOGGER.debug("Producing message to internal bus: {}", message);
-        processor.onNext(message);
+        CompletableFuture<Void> future = CompletableFuture.completedFuture(null);
+        for (Subscription subscription : consumers) {
+            Runnable runnable = () -> subscription.getConsumer().accept(subscription.getInfo().getConverter().apply(message));
+            future.thenComposeAsync(f -> CompletableFuture.runAsync(runnable, service));
+        }
+        if (callback != null) {
+            future.thenAccept(callback);
+        }
+        return future;
+    }
+
+    @Override
+    public <S, T> void subscribe(Consumer<T> consumer, SubscriptionInfo<S, T> info) {
+        consumers.add(new Subscription(consumer, info));
     }
 }

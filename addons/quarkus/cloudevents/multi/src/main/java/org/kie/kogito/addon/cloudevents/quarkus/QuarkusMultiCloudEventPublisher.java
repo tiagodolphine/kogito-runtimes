@@ -85,34 +85,28 @@ public class QuarkusMultiCloudEventPublisher implements ChannelRegistar, EventRe
 
             @Override
             public Consumption consumption() {
-                return Consumption.PAYLOAD;
+                return Consumption.MESSAGE;
             }
 
             @Override
             public boolean isBlocking() {
-                return true;
+                return false;
             }
 
             @Override
             public Acknowledgment.Strategy getAcknowledgment() {
-                return Strategy.POST_PROCESSING;
+                return Strategy.MANUAL;
             }
 
             @Override
             public Merge.Mode getMerge() {
                 return Mode.MERGE;
             }
-
-            @Override
-            public String getWorkerPoolName() {
-                return KogitoEventStreams.WORKER_THREAD;
-            }
         };
     }
 
     @Override
     public void initialize() {
-
         Collection<MediatorConfiguration> mediators = new ArrayList<>();
         channels.forEach(channel -> mediators.add(mediatorConf(channel)));
         if (!mediators.isEmpty()) {
