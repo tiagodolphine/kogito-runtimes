@@ -26,6 +26,7 @@ import org.eclipse.microprofile.reactive.messaging.Message;
 import org.kie.kogito.Application;
 import org.kie.kogito.conf.ConfigBean;
 import org.kie.kogito.event.EventReceiver;
+import org.kie.kogito.event.KogitoEventExecutor;
 import org.kie.kogito.event.impl.DefaultEventConsumerFactory;
 import org.kie.kogito.process.Process;
 import org.kie.kogito.services.event.impl.AbstractMessageConsumer;
@@ -53,6 +54,10 @@ public class $Type$MessageConsumer extends AbstractMessageConsumer<$Type$, $Data
 
     @javax.inject.Inject
     EventReceiver eventReceiver;
+    
+    @javax.inject.Inject
+    @javax.inject.Named(KogitoEventExecutor.BEAN_NAME)
+    ExecutorService executor;
 
     @javax.annotation.PostConstruct
     void init() {

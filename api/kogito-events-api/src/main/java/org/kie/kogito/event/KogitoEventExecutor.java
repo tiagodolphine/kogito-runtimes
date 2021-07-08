@@ -28,6 +28,7 @@ public class KogitoEventExecutor {
     public static final String DEFAULT_MAX_THREADS = "10";
     public static final String QUEUE_SIZE_PROPERTY = "kogito.quarkus.events.threads.queueSize";
     public static final String DEFAULT_QUEUE_SIZE = "1";
+    public static final String BEAN_NAME = "kogito-event-executor";
 
     public static ExecutorService getEventExecutor(int numOfThreads, int blockQueueSize) {
         BlockingQueue<Runnable> blockingQueue = new ArrayBlockingQueue<>(blockQueueSize);

@@ -24,8 +24,9 @@ import java.util.function.Consumer;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
+import javax.inject.Named;
 
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.kie.kogito.event.EventReceiver;
@@ -62,18 +63,13 @@ public class QuarkusCloudEventReceiver implements EventReceiver {
     }
 
     private Collection<Subscription<?, ?>> consumers;
+    @Inject
+    @Named(KogitoEventExecutor.BEAN_NAME)
     private ExecutorService service;
-
-    @ConfigProperty(name = KogitoEventExecutor.MAX_THREADS_PROPERTY, defaultValue = KogitoEventExecutor.DEFAULT_MAX_THREADS)
-    private int numThreads;
-
-    @ConfigProperty(name = KogitoEventExecutor.QUEUE_SIZE_PROPERTY, defaultValue = KogitoEventExecutor.DEFAULT_QUEUE_SIZE)
-    private int queueSize;
 
     @PostConstruct
     private void init() {
         consumers = new CopyOnWriteArrayList<>();
-        service = KogitoEventExecutor.getEventExecutor(numThreads, queueSize);
     }
 
     /**

@@ -16,14 +16,12 @@
 package org.kie.kogito.services.event.impl;
 
 import java.util.Optional;
-import java.util.concurrent.ExecutorService;
 
 import org.kie.kogito.Application;
 import org.kie.kogito.Model;
 import org.kie.kogito.event.EventConverter;
 import org.kie.kogito.event.EventReceiver;
 import org.kie.kogito.event.InputTriggerAware;
-import org.kie.kogito.event.KogitoEventExecutor;
 import org.kie.kogito.event.SubscriptionInfo;
 import org.kie.kogito.process.Process;
 import org.kie.kogito.services.event.AbstractProcessDataEvent;
@@ -35,8 +33,6 @@ import org.slf4j.LoggerFactory;
 public abstract class AbstractMessageConsumer<M extends Model, D, T extends AbstractProcessDataEvent<D>> implements InputTriggerAware {
 
     protected static final Logger logger = LoggerFactory.getLogger(AbstractMessageConsumer.class);
-
-    protected static ExecutorService executor = KogitoEventExecutor.getEventExecutor(10, 1);
 
     private Process<M> process;
     private Application application;
