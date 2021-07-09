@@ -16,10 +16,14 @@
 package org.kie.kogito.addon.cloudevents.quarkus;
 
 import java.util.Collection;
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -81,7 +85,7 @@ public class QuarkusCloudEventReceiver implements EventReceiver {
     @Incoming(KogitoEventStreams.INCOMING)
     public CompletionStage<Void> onEvent(Message<String> message) {
         LOGGER.debug("Received message from channel {}: {}", KogitoEventStreams.INCOMING, message);
-        return produce(message.getPayload(), (v,e) -> {
+        return produce(message.getPayload(), (v, e) -> {
             LOGGER.debug("Acking message {}", message.getPayload());
             message.ack();
             if (e != null) {
@@ -94,22 +98,69 @@ public class QuarkusCloudEventReceiver implements EventReceiver {
         return produce(message, null);
     }
 
-    /**
-     * Produces a message in the internal application bus
-     *
-     * @param message the given CE message in JSON format
+    /*
+     * This class is needed to make sure that ack is invoked just once all the futures
+     * has been completed, either with failure or successfully
      */
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static class CompletableListener implements BiConsumer<Void, Throwable> {
+        private Queue<CompletableFuture<?>> pending = new LinkedList<>();
+        private BiConsumer<Void, Throwable> callback;
+        private Lock lock = new ReentrantLock();
+
+        public void add(CompletableFuture<Void> future) {
+            try {
+                lock.lock();
+                pending.offer(future);
+            } finally {
+                lock.unlock();
+            }
+            future.whenComplete(this);
+        }
+
+        @Override
+        public void accept(Void t, Throwable u) {
+            boolean invokeCallback;
+            try {
+                lock.lock();
+                pending.poll();
+                invokeCallback = shouldInvoke();
+            } finally {
+                lock.unlock();
+            }
+            if (invokeCallback) {
+                callback.accept(t, u);
+            }
+        }
+
+        public void done(BiConsumer<Void, Throwable> callback) {
+            boolean invokeCallback;
+            try {
+                lock.lock();
+                this.callback = callback;
+                invokeCallback = shouldInvoke();
+            } finally {
+                lock.unlock();
+            }
+            if (invokeCallback) {
+                callback.accept(null, null);
+            }
+        }
+
+        private boolean shouldInvoke() {
+            return pending.isEmpty() && callback != null;
+        }
+    }
+
+  
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public CompletableFuture<Void> produce(final String message, BiConsumer<Void, Throwable> callback) {
         CompletableFuture<Void> result = CompletableFuture.completedFuture(null);
-        CompletableFuture<Void> future = result;
+        CompletableListener listener = new CompletableListener();
         for (Subscription subscription : consumers) {
-            future = result.thenAcceptAsync(t -> subscription.getConsumer().accept(subscription.getInfo().getConverter()
-                    .apply(message)), service);
+            listener.add(result.thenAcceptAsync(t -> subscription.getConsumer().accept(subscription.getInfo().getConverter()
+                    .apply(message)), service));
         }
-        if (callback != null) {
-            future.whenComplete(callback);
-        }
+        listener.done(callback);
         return result;
     }
 
