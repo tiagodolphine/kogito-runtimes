@@ -74,11 +74,14 @@ public class $Type$MessageConsumer extends AbstractMessageConsumer<$Type$, $Data
 
     public CompletionStage<?> processMessage(Message<String> message) {
         CompletableFuture future = CompletableFuture.completedFuture(null);
-        future.thenCompose(t -> CompletableFuture.runAsync(() -> super.consumePayload(message.getPayload()),
-                executor).thenAccept(v -> {
-                    logger.debug("acking message {}", message.getPayload());
+        future.thenAcceptAsync(t -> super.consumePayload(message.getPayload()),
+                executor).whenComplete((v,e) -> {
+                    logger.debug("Acking message {}", message.getPayload());
                     message.ack();
-                }));
+                    if (e != null) {
+                        logger.error("Error processing message {}", message.getPayload(), e);
+                    }
+                });
         return future;
     }
 

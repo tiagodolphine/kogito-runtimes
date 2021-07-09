@@ -20,6 +20,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import javax.annotation.PostConstruct;
@@ -80,9 +81,12 @@ public class QuarkusCloudEventReceiver implements EventReceiver {
     @Incoming(KogitoEventStreams.INCOMING)
     public CompletionStage<Void> onEvent(Message<String> message) {
         LOGGER.debug("Received message from channel {}: {}", KogitoEventStreams.INCOMING, message);
-        return produce(message.getPayload(), v -> {
+        return produce(message.getPayload(), (v,e) -> {
             LOGGER.debug("Acking message {}", message.getPayload());
             message.ack();
+            if (e != null) {
+                LOGGER.error("Error processing message {}", message.getPayload(), e);
+            }
         });
     }
 
@@ -95,13 +99,18 @@ public class QuarkusCloudEventReceiver implements EventReceiver {
      *
      * @param message the given CE message in JSON format
      */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    public CompletableFuture<Void> produce(final String message, Consumer<Void> callback) {
-        CompletableFuture<Void> future = CompletableFuture.completedFuture(null);
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public CompletableFuture<Void> produce(final String message, BiConsumer<Void, Throwable> callback) {
+        CompletableFuture<Void> result = CompletableFuture.completedFuture(null);
+        CompletableFuture<Void> future = result;
         for (Subscription subscription : consumers) {
-            future.thenCompose(f -> CompletableFuture.runAsync(() -> subscription.getConsumer().accept(subscription.getInfo().getConverter().apply(message)), service).thenAccept(callback));
+            future = result.thenAcceptAsync(t -> subscription.getConsumer().accept(subscription.getInfo().getConverter()
+                    .apply(message)), service);
         }
-        return future;
+        if (callback != null) {
+            future.whenComplete(callback);
+        }
+        return result;
     }
 
     @Override

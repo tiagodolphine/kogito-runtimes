@@ -35,7 +35,7 @@ public class KogitoEventExecutor {
         RejectedExecutionHandler rejectedExecutionHandler = new ThreadPoolExecutor.CallerRunsPolicy();
         return new ThreadPoolExecutor(1, numOfThreads, 1L, TimeUnit.MINUTES, blockingQueue, rejectedExecutionHandler);
     }
-
+    
     private KogitoEventExecutor() {
     }
 
