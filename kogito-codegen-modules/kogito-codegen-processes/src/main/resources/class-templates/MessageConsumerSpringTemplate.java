@@ -29,14 +29,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class $Type$MessageConsumer extends AbstractMessageConsumer<$Type$, $DataType$, $DataEventType$> {
 
     @org.springframework.beans.factory.annotation.Autowired()
-    ObjectMapper objectMapper;
-    
-    @org.springframework.beans.factory.annotation.Autowired()
     $Type$MessageConsumer(
             Application application,
             @org.springframework.beans.factory.annotation.Qualifier("$ProcessName$") Process<$Type$> process,
             ConfigBean configBean,
-            EventReceiver eventReceiver) {
+            EventReceiver eventReceiver,
+            ObjectMapper objectMapper) {
         super(application,
               process,
               "$Trigger$",

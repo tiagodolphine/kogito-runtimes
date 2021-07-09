@@ -32,10 +32,10 @@ public class KogitoEventExecutorProducer {
     
     
     @ConfigProperty(name = KogitoEventExecutor.MAX_THREADS_PROPERTY, defaultValue = KogitoEventExecutor.DEFAULT_MAX_THREADS)
-    private int numThreads;
+    int numThreads;
 
     @ConfigProperty(name = KogitoEventExecutor.QUEUE_SIZE_PROPERTY, defaultValue = KogitoEventExecutor.DEFAULT_QUEUE_SIZE)
-    private int queueSize;
+    int queueSize;
 
 
     @Produces

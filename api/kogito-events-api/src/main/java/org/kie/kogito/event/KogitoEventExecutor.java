@@ -25,17 +25,23 @@ import java.util.concurrent.TimeUnit;
 public class KogitoEventExecutor {
 
     public static final String MAX_THREADS_PROPERTY = "kogito.quarkus.events.threads.poolSize";
+    private static final int DEFAULT_MAX_THREADS_INT = 10;
     public static final String DEFAULT_MAX_THREADS = "10";
-    public static final String QUEUE_SIZE_PROPERTY = "kogito.quarkus.events.threads.queueSize";
+    private static final int DEFAULT_QUEUE_SIZE_INT = 1;
     public static final String DEFAULT_QUEUE_SIZE = "1";
+    public static final String QUEUE_SIZE_PROPERTY = "kogito.quarkus.events.threads.queueSize";
     public static final String BEAN_NAME = "kogito-event-executor";
+
+    public static ExecutorService getEventExecutor() {
+        return getEventExecutor(DEFAULT_MAX_THREADS_INT, DEFAULT_QUEUE_SIZE_INT);
+    }
 
     public static ExecutorService getEventExecutor(int numOfThreads, int blockQueueSize) {
         BlockingQueue<Runnable> blockingQueue = new ArrayBlockingQueue<>(blockQueueSize);
         RejectedExecutionHandler rejectedExecutionHandler = new ThreadPoolExecutor.CallerRunsPolicy();
         return new ThreadPoolExecutor(1, numOfThreads, 1L, TimeUnit.MINUTES, blockingQueue, rejectedExecutionHandler);
     }
-    
+
     private KogitoEventExecutor() {
     }
 

@@ -15,17 +15,6 @@
  */
 package $Package$;
 
-import java.util.concurrent.ExecutorService;
-
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Produces;
-import javax.inject.Named;
-
-
-import org.kie.kogito.event.KogitoEventExecutor;
-
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-
 
 public class KogitoEventExecutorProducer {
 }

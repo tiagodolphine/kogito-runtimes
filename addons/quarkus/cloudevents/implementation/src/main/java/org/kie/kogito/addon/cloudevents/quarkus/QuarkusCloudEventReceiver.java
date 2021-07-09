@@ -29,6 +29,7 @@ import java.util.function.Consumer;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
 import javax.inject.Named;
 
@@ -70,11 +71,13 @@ public class QuarkusCloudEventReceiver implements EventReceiver {
     private Collection<Subscription<?, ?>> consumers;
     @Inject
     @Named(KogitoEventExecutor.BEAN_NAME)
-    private ExecutorService service;
+    private Instance<ExecutorService> executors;
+    private ExecutorService executor;
 
     @PostConstruct
     private void init() {
         consumers = new CopyOnWriteArrayList<>();
+        executor = executors.isResolvable() ? executors.get() : KogitoEventExecutor.getEventExecutor();
     }
 
     /**
@@ -151,14 +154,13 @@ public class QuarkusCloudEventReceiver implements EventReceiver {
         }
     }
 
-  
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public CompletableFuture<Void> produce(final String message, BiConsumer<Void, Throwable> callback) {
         CompletableFuture<Void> result = CompletableFuture.completedFuture(null);
         CompletableListener listener = new CompletableListener();
         for (Subscription subscription : consumers) {
             listener.add(result.thenAcceptAsync(t -> subscription.getConsumer().accept(subscription.getInfo().getConverter()
-                    .apply(message)), service));
+                    .apply(message)), executor));
         }
         listener.done(callback);
         return result;
