@@ -15,13 +15,18 @@
  */
 package $Package$;
 
+import java.util.concurrent.ExecutorService;
+
+import org.checkerframework.framework.qual.QualifierArgument;
 import org.kie.kogito.Application;
 import org.kie.kogito.conf.ConfigBean;
 import org.kie.kogito.event.impl.DefaultEventConsumerFactory;
 import org.kie.kogito.process.Process;
+import org.kie.kogito.process.ProcessService;
 import org.kie.kogito.services.event.impl.AbstractMessageConsumer;
 import org.kie.kogito.services.event.impl.JsonStringToObject;
 import org.kie.kogito.event.EventReceiver;
+import org.kie.kogito.event.KogitoEventExecutor;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -34,7 +39,9 @@ public class $Type$MessageConsumer extends AbstractMessageConsumer<$Type$, $Data
             @org.springframework.beans.factory.annotation.Qualifier("$ProcessName$") Process<$Type$> process,
             ConfigBean configBean,
             EventReceiver eventReceiver,
-            ObjectMapper objectMapper) {
+            ObjectMapper objectMapper,
+            ProcessService processService,
+            @org.springframework.beans.factory.annotation.Qualifier(KogitoEventExecutor.BEAN_NAME) ExecutorService executorService) {
         super(application,
               process,
               "$Trigger$",
@@ -42,7 +49,9 @@ public class $Type$MessageConsumer extends AbstractMessageConsumer<$Type$, $Data
               eventReceiver,
               new JsonStringToObject (objectMapper, $DataType$.class),
               new JsonStringToObject (objectMapper, $DataEventType$.class),
-              configBean.useCloudEvents());
+              configBean.useCloudEvents(),
+              processService,
+              executorService);
     }
 
     protected $Type$ eventToModel($DataType$ event) {

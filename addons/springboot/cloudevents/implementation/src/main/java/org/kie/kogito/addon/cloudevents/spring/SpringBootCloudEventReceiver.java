@@ -15,7 +15,8 @@
  */
 package org.kie.kogito.addon.cloudevents.spring;
 
-import java.util.function.Consumer;
+import java.util.concurrent.CompletionStage;
+import java.util.function.Function;
 
 import org.kie.kogito.event.EventReceiver;
 import org.kie.kogito.event.KogitoEventStreams;
@@ -35,7 +36,7 @@ public class SpringBootCloudEventReceiver implements EventReceiver {
     Publisher<String> eventPublisher;
 
     @Override
-    public <S, T> void subscribe(Consumer<T> consumer, SubscriptionInfo<S, T> info) {
-        Flux.from(eventPublisher).subscribe(t -> consumer.accept(info.getConverter().apply((S) t)));
+    public <T> void subscribe(Function<T, CompletionStage<Void>> consumer, SubscriptionInfo<String, T> info) {
+        Flux.from(eventPublisher).subscribe(t -> consumer.apply(info.getConverter().apply(t)));
     }
 }

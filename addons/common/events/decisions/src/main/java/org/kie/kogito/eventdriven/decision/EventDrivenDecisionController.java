@@ -20,6 +20,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 import org.kie.dmn.api.core.DMNContext;
 import org.kie.dmn.api.core.DMNResult;
@@ -84,12 +86,13 @@ public class EventDrivenDecisionController {
                 .ifPresent(this::handleRequest);
     }
 
-    private void handleRequest(CloudEvent event) {
+    private CompletionStage<Void> handleRequest(CloudEvent event) {
         buildEvaluationContext(event)
                 .map(this::processRequest)
                 .flatMap(this::buildResponseCloudEvent)
                 .flatMap(CloudEventUtils::toDataEvent)
                 .ifPresent(e -> eventEmitter.emit(e, (String) e.get("type"), Optional.empty()));
+        return CompletableFuture.completedFuture(null);
     }
 
     private Optional<EvaluationContext> buildEvaluationContext(CloudEvent event) {

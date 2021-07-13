@@ -16,27 +16,18 @@
 package org.kie.kogito.addon.cloudevents.quarkus;
 
 import java.util.Collection;
-import java.util.LinkedList;
-import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
+import java.util.function.Function;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Instance;
-import javax.inject.Inject;
-import javax.inject.Named;
 
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.kie.kogito.event.EventReceiver;
-import org.kie.kogito.event.KogitoEventExecutor;
 import org.kie.kogito.event.KogitoEventStreams;
 import org.kie.kogito.event.SubscriptionInfo;
 import org.slf4j.Logger;
@@ -50,34 +41,29 @@ public class QuarkusCloudEventReceiver implements EventReceiver {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(QuarkusCloudEventReceiver.class);
 
-    private static final class Subscription<S, T> {
-        private final Consumer<T> consumer;
-        private final SubscriptionInfo<S, T> info;
+    private static final class Subscription<T> {
+        private final Function<T, CompletionStage<Void>> consumer;
+        private final SubscriptionInfo<String, T> info;
 
-        public Subscription(Consumer<T> consumer, SubscriptionInfo<S, T> info) {
+        public Subscription(Function<T, CompletionStage<Void>> consumer, SubscriptionInfo<String, T> info) {
             this.consumer = consumer;
             this.info = info;
         }
 
-        public Consumer<T> getConsumer() {
+        public Function<T, CompletionStage<Void>> getConsumer() {
             return consumer;
         }
 
-        public SubscriptionInfo<S, T> getInfo() {
+        public SubscriptionInfo<String, T> getInfo() {
             return info;
         }
     }
 
-    private Collection<Subscription<?, ?>> consumers;
-    @Inject
-    @Named(KogitoEventExecutor.BEAN_NAME)
-    private Instance<ExecutorService> executors;
-    private ExecutorService executor;
+    private Collection<Subscription<Object>> consumers;
 
     @PostConstruct
     private void init() {
         consumers = new CopyOnWriteArrayList<>();
-        executor = executors.isResolvable() ? executors.get() : KogitoEventExecutor.getEventExecutor();
     }
 
     /**
@@ -101,73 +87,21 @@ public class QuarkusCloudEventReceiver implements EventReceiver {
         return produce(message, null);
     }
 
-    /*
-     * This class is needed to make sure that ack is invoked just once all the futures
-     * has been completed, either with failure or successfully
-     */
-    private static class CompletableListener implements BiConsumer<Void, Throwable> {
-        private Queue<CompletableFuture<?>> pending = new LinkedList<>();
-        private BiConsumer<Void, Throwable> callback;
-        private Lock lock = new ReentrantLock();
-
-        public void add(CompletableFuture<Void> future) {
-            try {
-                lock.lock();
-                pending.offer(future);
-            } finally {
-                lock.unlock();
-            }
-            future.whenComplete(this);
+    public CompletionStage<Void> produce(final String message, BiConsumer<Object, Throwable> callback) {
+        CompletionStage<Void> result = CompletableFuture.completedFuture(null);
+        CompletionStage<Void> future = result;
+        for (Subscription<Object> subscription : consumers) {
+            future = future.thenCompose(f -> subscription.getConsumer().apply(subscription.getInfo().getConverter().apply(message)));
         }
-
-        @Override
-        public void accept(Void t, Throwable u) {
-            boolean invokeCallback;
-            try {
-                lock.lock();
-                pending.poll();
-                invokeCallback = shouldInvoke();
-            } finally {
-                lock.unlock();
-            }
-            if (invokeCallback) {
-                callback.accept(t, u);
-            }
+        if (callback != null) {
+            future.whenComplete(callback);
         }
-
-        public void done(BiConsumer<Void, Throwable> callback) {
-            boolean invokeCallback;
-            try {
-                lock.lock();
-                this.callback = callback;
-                invokeCallback = shouldInvoke();
-            } finally {
-                lock.unlock();
-            }
-            if (invokeCallback) {
-                callback.accept(null, null);
-            }
-        }
-
-        private boolean shouldInvoke() {
-            return pending.isEmpty() && callback != null;
-        }
-    }
-
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    public CompletableFuture<Void> produce(final String message, BiConsumer<Void, Throwable> callback) {
-        CompletableFuture<Void> result = CompletableFuture.completedFuture(null);
-        CompletableListener listener = new CompletableListener();
-        for (Subscription subscription : consumers) {
-            listener.add(result.thenAcceptAsync(t -> subscription.getConsumer().accept(subscription.getInfo().getConverter()
-                    .apply(message)), executor));
-        }
-        listener.done(callback);
         return result;
     }
 
     @Override
-    public <S, T> void subscribe(Consumer<T> consumer, SubscriptionInfo<S, T> info) {
-        consumers.add(new Subscription<>(consumer, info));
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public <T> void subscribe(Function<T, CompletionStage<Void>> consumer, SubscriptionInfo<String, T> info) {
+        consumers.add(new Subscription(consumer, info));
     }
 }

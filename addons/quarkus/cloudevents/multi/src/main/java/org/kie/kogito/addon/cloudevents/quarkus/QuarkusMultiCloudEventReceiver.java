@@ -21,7 +21,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Consumer;
+import java.util.concurrent.CompletionStage;
+import java.util.function.Function;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Instance;
@@ -128,8 +129,8 @@ public class QuarkusMultiCloudEventReceiver implements ChannelRegistar, EventRec
     }
 
     @Override
-    public <S, T> void subscribe(Consumer<T> consumer, SubscriptionInfo<S, T> subscription) {
-        // Subscription is automatic
+    public <T> void subscribe(Function<T, CompletionStage<Void>> consumer, SubscriptionInfo<String, T> converter) {
+        // Automatic subscription
     }
 
 }

@@ -25,9 +25,9 @@ import java.util.concurrent.TimeUnit;
 public class KogitoEventExecutor {
 
     public static final String MAX_THREADS_PROPERTY = "kogito.quarkus.events.threads.poolSize";
-    private static final int DEFAULT_MAX_THREADS_INT = 10;
+    public static final int DEFAULT_MAX_THREADS_INT = 10;
     public static final String DEFAULT_MAX_THREADS = "10";
-    private static final int DEFAULT_QUEUE_SIZE_INT = 1;
+    public static final int DEFAULT_QUEUE_SIZE_INT = 1;
     public static final String DEFAULT_QUEUE_SIZE = "1";
     public static final String QUEUE_SIZE_PROPERTY = "kogito.quarkus.events.threads.queueSize";
     public static final String BEAN_NAME = "kogito-event-executor";

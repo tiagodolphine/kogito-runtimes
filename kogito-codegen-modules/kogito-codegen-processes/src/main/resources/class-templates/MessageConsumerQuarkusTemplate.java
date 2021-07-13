@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates.
+yes * Copyright 2021 Red Hat, Inc. and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import org.kie.kogito.event.EventReceiver;
 import org.kie.kogito.event.KogitoEventExecutor;
 import org.kie.kogito.event.impl.DefaultEventConsumerFactory;
 import org.kie.kogito.process.Process;
+import org.kie.kogito.process.ProcessService;
 import org.kie.kogito.services.event.impl.AbstractMessageConsumer;
 import org.kie.kogito.services.event.impl.JsonStringToObject;
 
@@ -57,7 +58,11 @@ public class $Type$MessageConsumer extends AbstractMessageConsumer<$Type$, $Data
     
     @javax.inject.Inject
     @javax.inject.Named(KogitoEventExecutor.BEAN_NAME)
-    ExecutorService executor;
+    ExecutorService executorService;
+    
+    @javax.inject.Inject
+    ProcessService processService;
+    
 
     @javax.annotation.PostConstruct
     void init() {
@@ -68,21 +73,22 @@ public class $Type$MessageConsumer extends AbstractMessageConsumer<$Type$, $Data
                 eventReceiver,
                 new JsonStringToObject(objectMapper, $DataType$.class),
                 new JsonStringToObject(objectMapper, $DataEventType$.class),
-                configBean.useCloudEvents());
+                configBean.useCloudEvents(),
+                processService,
+                executorService);
 
     }
 
     public CompletionStage<?> processMessage(Message<String> message) {
-        CompletableFuture future = CompletableFuture.completedFuture(null);
-        future.thenAcceptAsync(t -> super.consumePayload(message.getPayload()),
-                executor).whenComplete((v,e) -> {
+         CompletionStage<?> result = CompletableFuture.completedFuture(null);
+         result.thenCompose(x -> consumePayload(message.getPayload())).whenComplete((v,e) -> {
                     logger.debug("Acking message {}", message.getPayload());
                     message.ack();
                     if (e != null) {
                         logger.error("Error processing message {}", message.getPayload(), e);
                     }
                 });
-        return future;
+         return result;
     }
 
     protected $Type$ eventToModel($DataType$ event) {

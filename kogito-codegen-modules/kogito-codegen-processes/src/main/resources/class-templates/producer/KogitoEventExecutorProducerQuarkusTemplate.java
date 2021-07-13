@@ -40,7 +40,7 @@ public class KogitoEventExecutorProducer {
 
     @Produces
     @Named(KogitoEventExecutor.BEAN_NAME)
-    public ExecutorService eventMarshaller(){
+    public ExecutorService getExecutorService(){
         return KogitoEventExecutor.getEventExecutor(numThreads, queueSize);
     }
 }

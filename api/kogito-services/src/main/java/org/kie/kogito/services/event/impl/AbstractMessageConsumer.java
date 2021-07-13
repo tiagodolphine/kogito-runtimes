@@ -16,6 +16,8 @@
 package org.kie.kogito.services.event.impl;
 
 import java.util.Optional;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutorService;
 
 import org.kie.kogito.Application;
 import org.kie.kogito.Model;
@@ -24,6 +26,7 @@ import org.kie.kogito.event.EventReceiver;
 import org.kie.kogito.event.InputTriggerAware;
 import org.kie.kogito.event.SubscriptionInfo;
 import org.kie.kogito.process.Process;
+import org.kie.kogito.process.ProcessService;
 import org.kie.kogito.services.event.AbstractProcessDataEvent;
 import org.kie.kogito.services.event.EventConsumer;
 import org.kie.kogito.services.event.EventConsumerFactory;
@@ -38,9 +41,8 @@ public abstract class AbstractMessageConsumer<M extends Model, D, T extends Abst
     private Application application;
     private String trigger;
     private EventConsumer<M> eventConsumer;
-    private boolean useCloudEvents;
-    private EventConverter<String, D> dataEventConverter;
-    private EventConverter<String, T> cloudEventConverter;
+
+    private EventConverter<String, ? extends Object> eventConverter;
 
     // in general we should favor the non-empty constructor
     // but there is an issue with Quarkus https://github.com/quarkusio/quarkus/issues/2949#issuecomment-513017781
@@ -55,8 +57,10 @@ public abstract class AbstractMessageConsumer<M extends Model, D, T extends Abst
             EventReceiver eventReceiver,
             EventConverter<String, D> dataEventConverter,
             EventConverter<String, T> cloudEventConverter,
-            boolean useCloudEvents) {
-        init(application, process, trigger, eventConsumerFactory, eventReceiver, dataEventConverter, cloudEventConverter, useCloudEvents);
+            boolean useCloudEvents,
+            ProcessService processService,
+            ExecutorService executorService) {
+        init(application, process, trigger, eventConsumerFactory, eventReceiver, dataEventConverter, cloudEventConverter, useCloudEvents, processService, executorService);
     }
 
     public void init(Application application,
@@ -66,40 +70,40 @@ public abstract class AbstractMessageConsumer<M extends Model, D, T extends Abst
             EventReceiver eventReceiver,
             EventConverter<String, D> dataEventConverter,
             EventConverter<String, T> cloudEventConverter,
-            boolean useCloudEvents) {
+            boolean useCloudEvents,
+            ProcessService processService,
+            ExecutorService executorService) {
         this.process = process;
         this.application = application;
         this.trigger = trigger;
-        this.eventConsumer = eventConsumerFactory.get(this::eventToModel, useCloudEvents);
-        this.useCloudEvents = useCloudEvents;
-        this.dataEventConverter = dataEventConverter;
-        this.cloudEventConverter = cloudEventConverter;
+        this.eventConsumer = eventConsumerFactory.get(processService, executorService, this::eventToModel, useCloudEvents);
         if (useCloudEvents) {
+            eventConverter = cloudEventConverter;
             eventReceiver.subscribe(this::consumeCloud, new SubscriptionInfo<>(cloudEventConverter, Optional.of(trigger)));
         } else {
+            eventConverter = dataEventConverter;
             eventReceiver.subscribe(this::consume, new SubscriptionInfo<>(dataEventConverter, Optional.of(trigger)));
         }
         logger.info("Consumer for {} started", trigger);
     }
 
-    protected void consumeCloud(T payload) {
-        logger.debug("Received {} for trigger {}", payload, trigger);
-        eventConsumer.consume(application, process, payload, trigger);
-        logger.debug("Processed {} for trigger {}", payload, trigger);
+    protected CompletionStage<Void> consumeCloud(T payload) {
+        return consume(payload);
     }
 
-    protected void consume(D payload) {
-        logger.debug("Received {} for trigger {}", payload, trigger);
-        eventConsumer.consume(application, process, payload, trigger);
-        logger.debug("Processed {} for trigger {}", payload, trigger);
+    protected CompletionStage<Void> consumeNotCloud(D payload) {
+        return consume(payload);
     }
 
-    protected void consumePayload(String payload) {
-        if (useCloudEvents) {
-            consumeCloud(cloudEventConverter.apply(payload));
-        } else {
-            consume(dataEventConverter.apply(payload));
-        }
+    private CompletionStage<Void> consume(Object payload) {
+        logger.debug("Received {} for trigger {}", payload, trigger);
+        CompletionStage<Void> result = eventConsumer.consume(application, process, payload, trigger);
+        logger.debug("Processed {} for trigger {}", payload, trigger);
+        return result;
+    }
+
+    protected CompletionStage<Void> consumePayload(String payload) {
+        return consume(eventConverter.apply(payload));
     }
 
     @Override

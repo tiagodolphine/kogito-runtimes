@@ -20,12 +20,16 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CompletionStage;
 
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import org.kie.kogito.event.EventReceiver;
 import org.kie.kogito.event.KogitoEventStreams;
+import org.kie.kogito.event.SubscriptionInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
@@ -40,7 +44,16 @@ import reactor.kafka.receiver.ReceiverOffset;
 import reactor.kafka.receiver.ReceiverOptions;
 
 @Component
-public class SpringKafkaCloudEventPublisher {
+public class SpringKafkaCloudEventPublisher implements EventReceiver{
+    
+    @Autowired
+    @Qualifier(KogitoEventStreams.PUBLISHER)
+    Publisher<String> eventPublisher;
+
+    @Override
+    public <T> void subscribe(Function<T, CompletionStage<Void>> consumer, SubscriptionInfo<String, T> info) {
+        Flux.from(eventPublisher).subscribe(t -> consumer.apply(info.getConverter().apply(t)));
+    }
 
     private static final Logger log = LoggerFactory.getLogger(SpringKafkaCloudEventPublisher.class.getName());
 

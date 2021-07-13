@@ -15,6 +15,25 @@
  */
 package $Package$;
 
+import java.util.concurrent.ExecutorService;
 
+import org.kie.kogito.event.KogitoEventExecutor;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
 public class KogitoEventExecutorProducer {
+    
+    
+    @org.springframework.beans.factory.annotation.Value("${"+KogitoEventExecutor.MAX_THREADS_PROPERTY+":#{"+KogitoEventExecutor.DEFAULT_MAX_THREADS_INT+"}}")
+    int numThreads;
+
+    @org.springframework.beans.factory.annotation.Value("${"+KogitoEventExecutor.QUEUE_SIZE_PROPERTY+":#{"+KogitoEventExecutor.DEFAULT_QUEUE_SIZE_INT+"}}")
+    int queueSize;
+    
+    @Bean(KogitoEventExecutor.BEAN_NAME)
+    public ExecutorService getExecutorService(){
+        return KogitoEventExecutor.getEventExecutor(numThreads, queueSize);
+    }
 }
