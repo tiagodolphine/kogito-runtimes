@@ -27,6 +27,7 @@ import javax.enterprise.context.ApplicationScoped;
 
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
+import org.kie.kogito.addon.cloudevents.Subscription;
 import org.kie.kogito.event.EventReceiver;
 import org.kie.kogito.event.KogitoEventStreams;
 import org.kie.kogito.event.SubscriptionInfo;
@@ -40,24 +41,6 @@ import io.quarkus.runtime.Startup;
 public class QuarkusCloudEventReceiver implements EventReceiver {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(QuarkusCloudEventReceiver.class);
-
-    private static final class Subscription<T> {
-        private final Function<T, CompletionStage<Void>> consumer;
-        private final SubscriptionInfo<String, T> info;
-
-        public Subscription(Function<T, CompletionStage<Void>> consumer, SubscriptionInfo<String, T> info) {
-            this.consumer = consumer;
-            this.info = info;
-        }
-
-        public Function<T, CompletionStage<Void>> getConsumer() {
-            return consumer;
-        }
-
-        public SubscriptionInfo<String, T> getInfo() {
-            return info;
-        }
-    }
 
     private Collection<Subscription<Object>> consumers;
 
@@ -100,7 +83,7 @@ public class QuarkusCloudEventReceiver implements EventReceiver {
     }
 
     @Override
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public <T> void subscribe(Function<T, CompletionStage<Void>> consumer, SubscriptionInfo<String, T> info) {
         consumers.add(new Subscription(consumer, info));
     }
